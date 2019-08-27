@@ -1,0 +1,22 @@
+{
+  "name": "fundraiser",
+  "version": "1.0.0",
+  "description": "Fund Raising Smart Contract",
+  "main": "truffle-config.js",
+  "directories": {
+    "test": "test"
+  },
+  "scripts": {
+    "test": "truffle test"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/MKen212/fundraiser.git"
+  },
+  "author": "Mark Kensington, based on article by Ankit Brahmbhatt",
+  "license": "MIT",
+  "bugs": {
+    "url": "https://github.com/MKen212/fundraiser/issues"
+  },
+  "homepage": "https://github.com/MKen212/fundraiser#readme"
+}

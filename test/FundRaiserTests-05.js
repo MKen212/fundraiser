@@ -1,0 +1,191 @@
+"use strict";
+//* global web3 */
+/**
+ * FundRaiser - Test Scripts 05
+ * Covers Voting
+ * @author: Mark Kensington
+ */
+
+const assert = require("assert");
+const FundRaiser = artifacts.require("FundRaiser");
+
+contract("05 - Voting", async(accounts) => {
+
+  it("Standard Vote and hasVoted true check", async() => {
+    let instance = await FundRaiser.new("100", "10000", "1000");
+    let alice = accounts[0];
+    let bob = accounts[1];
+
+    let contribution = await instance.contribute({from: bob, value: 10000});
+    assert.equal(contribution.logs[0].event, "Contribution");
+
+    let request = await instance.createRequest("Request 01", "10000", alice, {from: alice});
+    assert.equal(request.logs[0].event, "RequestCreated");
+
+    let vote = await instance.voteForRequest(0, {from: bob});
+    assert.equal(vote.logs[0].event, "Vote");
+
+    let hasVoted = await instance.hasVoted(0, bob);
+    assert.equal(hasVoted, true);
+
+    let requestDetails = await instance.requests(0);
+    assert.equal(requestDetails.numberOfVoters, 1);
+  });
+
+  it("Vote for multiple requests", async() => {
+    let instance = await FundRaiser.new("100", "10000", "1000");
+    let alice = accounts[0];
+    let bob = accounts[1];
+
+    let contribution = await instance.contribute({from: bob, value: 10000});
+    assert.equal(contribution.logs[0].event, "Contribution");
+
+    let request01 = await instance.createRequest("Request 01", "8000", alice, {from: alice});
+    assert.equal(request01.logs[0].event, "RequestCreated");
+
+    let request02 = await instance.createRequest("Request 02", "4000", alice, {from: alice});
+    assert.equal(request02.logs[0].event, "RequestCreated");
+
+    let vote01 = await instance.voteForRequest(0, {from: bob});
+    assert.equal(vote01.logs[0].event, "Vote");
+    
+    let hasVoted01 = await instance.hasVoted(0, bob);
+    assert.equal(hasVoted01, true);
+
+    let vote02 = await instance.voteForRequest(1, {from: bob});
+    assert.equal(vote02.logs[0].event, "Vote");
+    
+    let hasVoted02 = await instance.hasVoted(0, bob);
+    assert.equal(hasVoted02, true);
+  });
+
+  // it ("Vote before goal reached should fail", async() => {});
+  /**
+   * Technically there should be a test to ensure a vote cannot be made before the
+   * goal is reached. However, as you cannot create a spending request before the goal is 
+   * reached then this situation would never be reached
+   */
+
+  it ("Vote for non-existent request should fail", async() => {
+    let instance = await FundRaiser.new("100", "10000", "1000");
+    let alice = accounts[0];
+    let bob = accounts[1];
+
+    let contribution = await instance.contribute({from: bob, value: 10000});
+    assert.equal(contribution.logs[0].event, "Contribution");
+
+    let request = await instance.createRequest("Request 01", "10000", alice, {from: alice});
+    assert.equal(request.logs[0].event, "RequestCreated");
+
+    try {
+      await instance.voteForRequest(1, {from: bob});
+      assert.fail("Vote for non-existent spending request not allowed. Vote should fail");
+    } catch (err) {
+      assert(err.toString().includes("Spending request does not exist"), "Message: " + err);
+    }
+  });
+
+  /* TO BE CODED
+  it ("Vote for completed request should fail", async() => {
+    let instance = await FundRaiser.new("100", "10000", "1000");
+    let alice = accounts[0];
+    let bob = accounts[1];
+
+    let contribution = await instance.contribute({from: bob, value: 10000});
+    assert.equal(contribution.logs[0].event, "Contribution");
+
+    let request = await instance.createRequest("Request 01", "10000", alice, {from: alice});
+    assert.equal(request.logs[0].event, "RequestCreated");
+
+    try {
+      await instance.voteForRequest(1, {from: bob});
+      assert.fail("Vote for non-existent spending request not allowed. Vote should fail");
+    } catch (err) {
+      assert(err.toString().includes("Spending request does not exist"), "Message: " + err);
+    }
+  });
+  */
+
+  it ("Vote for request by non-contributor should fail", async() => {
+    let instance = await FundRaiser.new("100", "10000", "1000");
+    let alice = accounts[0];
+    let bob = accounts[1];
+    let peter = accounts[2];
+
+    let contribution = await instance.contribute({from: bob, value: 10000});
+    assert.equal(contribution.logs[0].event, "Contribution");
+
+    let request = await instance.createRequest("Request 01", "10000", alice, {from: alice});
+    assert.equal(request.logs[0].event, "RequestCreated");
+
+    try {
+      await instance.voteForRequest(0, {from: peter});
+      assert.fail("Vote for request by non-contributor not allowed. Vote should fail");
+    } catch (err) {
+      assert(err.toString().includes("No contribution from Caller"), "Message: " + err);
+    }
+  });
+
+  it ("Repeated Vote for same request should fail", async() => {
+    let instance = await FundRaiser.new("100", "10000", "1000");
+    let alice = accounts[0];
+    let bob = accounts[1];
+
+    let contribution = await instance.contribute({from: bob, value: 10000});
+    assert.equal(contribution.logs[0].event, "Contribution");
+
+    let request = await instance.createRequest("Request 01", "10000", alice, {from: alice});
+    assert.equal(request.logs[0].event, "RequestCreated");
+
+    let vote = await instance.voteForRequest(0, {from: bob});
+    assert.equal(vote.logs[0].event, "Vote");
+
+    try {
+      await instance.voteForRequest(0, {from: bob});
+      assert.fail("Repeated Vote for same request not allowed. Vote should fail");
+    } catch (err) {
+      assert(err.toString().includes("Caller already voted"), "Message: " + err);
+    }
+  });
+
+  it("hasVoted false check", async() => {
+    let instance = await FundRaiser.new("100", "10000", "1000");
+    let alice = accounts[0];
+    let bob = accounts[1];
+
+    let contribution = await instance.contribute({from: bob, value: 10000});
+    assert.equal(contribution.logs[0].event, "Contribution");
+
+    let request = await instance.createRequest("Request 01", "10000", alice, {from: alice});
+    assert.equal(request.logs[0].event, "RequestCreated");
+
+    let hasVoted = await instance.hasVoted(0, bob);
+    assert.equal(hasVoted, false);
+  });
+
+  it ("hasVoted check for non-existent request should fail", async() => {
+    let instance = await FundRaiser.new("100", "10000", "1000");
+    let alice = accounts[0];
+    let bob = accounts[1];
+
+    let contribution = await instance.contribute({from: bob, value: 10000});
+    assert.equal(contribution.logs[0].event, "Contribution");
+
+    let request = await instance.createRequest("Request 01", "10000", alice, {from: alice});
+    assert.equal(request.logs[0].event, "RequestCreated");
+
+    try {
+      await instance.hasVoted(1, bob);
+      assert.fail("hasVoted check for non-existent spending request not allowed. Check should fail");
+    } catch (err) {
+      assert(err.toString().includes("Spending request does not exist"), "Message: " + err);
+    }
+  });
+
+
+ 
+
+
+
+
+});
