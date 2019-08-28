@@ -85,7 +85,6 @@ contract("05 - Voting", async(accounts) => {
     }
   });
 
-  /* TO BE CODED
   it ("Vote for completed request should fail", async() => {
     let instance = await FundRaiser.new("100", "10000", "1000");
     let alice = accounts[0];
@@ -97,14 +96,19 @@ contract("05 - Voting", async(accounts) => {
     let request = await instance.createRequest("Request 01", "10000", alice, {from: alice});
     assert.equal(request.logs[0].event, "RequestCreated");
 
+    let vote = await instance.voteForRequest(0, {from: bob});
+    assert.equal(vote.logs[0].event, "Vote");
+
+    let paymentRelease = await instance.releasePayment(0, {from: alice});
+    assert.equal(paymentRelease.logs[0].event, "PaymentReleased");
+
     try {
-      await instance.voteForRequest(1, {from: bob});
-      assert.fail("Vote for non-existent spending request not allowed. Vote should fail");
+      await instance.voteForRequest(0, {from: bob});
+      assert.fail("Vote for completed spending request not allowed. Vote should fail");
     } catch (err) {
-      assert(err.toString().includes("Spending request does not exist"), "Message: " + err);
+      assert(err.toString().includes("Request already completed"), "Message: " + err);
     }
   });
-  */
 
   it ("Vote for request by non-contributor should fail", async() => {
     let instance = await FundRaiser.new("100", "10000", "1000");
@@ -181,11 +185,4 @@ contract("05 - Voting", async(accounts) => {
       assert(err.toString().includes("Spending request does not exist"), "Message: " + err);
     }
   });
-
-
- 
-
-
-
-
 });

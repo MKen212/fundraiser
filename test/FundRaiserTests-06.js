@@ -10,7 +10,7 @@ const assert = require("assert");
 const FundRaiser = artifacts.require("FundRaiser");
 const BN = web3.utils.BN;
 
-contract("05 - Voting", async(accounts) => {
+contract("06 - Payment Release", async(accounts) => {
 
   it("Standard Payment Release", async() => {
     let instance = await FundRaiser.new("100", "10000", "1000");

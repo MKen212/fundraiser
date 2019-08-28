@@ -165,6 +165,21 @@ contract FundRaiser {
     emit PaymentReleased(msg.sender, _index, thisRequest.value, thisRequest.recipient);
     thisRequest.completed = true;
   }
+
+  /**
+   * @dev SafeMath Library Test Functions
+   * @dev These functions are ONLY required to expose the SafeMath internal Library 
+   * @dev functions for testing. These can be removed after testing if required
+   */
+  /* 
+  function testAdd(uint256 a, uint256 b) public pure returns (uint256) {
+    return SafeMath.add(a, b);
+  }
+
+  function testSub(uint256 a, uint256 b) public pure returns (uint256) {
+    return SafeMath.sub(a, b);
+  }
+  */
 }
 
 /**
