@@ -35,13 +35,16 @@ Once the deadline has passed, and so long as the goal has been reached, the cont
 Each spending request is stored sequentially starting from record 0.
 
 ### Voting
-Each contributor can then use the ```voteForRequest``` function (followed by the record number) to vote for a specific request
+Each contributor can then use the ```voteForRequest``` function (followed by the record number) to vote for a specific request.
 
 ### Releasing Payment
-If over 50% of the contributors vote for the Spending Request the owner can then use the ```releasePayment``` function (followed by the record number) to send the agreed value to the requested recipient address
+If over 50% of the contributors vote for the Spending Request the owner can then use the ```releasePayment``` function (followed by the record number) to send the agreed value to the requested recipient address.
 
 ### Refunds
 If the amount raised does not reach the goal defined, AND the contract duration has passed, the contributors can use the ```getRefund``` function to retrieve their full contribution.
+
+### Change Ownership
+It is possible for only the owner to change the owner using the ```changeOwner``` function (followed by the new owners Ethereum address).
 
 ### Other viewing functions
 The following view-only functions are also available on the contract:
@@ -50,6 +53,7 @@ The following view-only functions are also available on the contract:
 - deadline - Shows the deadline of the contract as a block number
 - goal - Shows the goal of the contract in wei
 - hasVoted (followed by spendingRequest record number and address) - Shows if the specific address has voted for the specific Spending Request
+- minimumContribuion - Shows the minimum amount required for each contribution in wei
 - owner - Shows the Ethereum address of the Smart Contract owner
 - requests (followed by spendingRequest record number) - Shows the details held of the spending request record, including description, value, recipient, completed flag and number of voters
 - totalContributors - Shows the total number of contributors

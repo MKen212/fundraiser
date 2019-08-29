@@ -79,6 +79,22 @@ contract("04 - Spending Requests", async(accounts) => {
     assert.equal(requestDetails.numberOfVoters, 0);
   });
 
+  it ("Spending Request of zero value should fail", async() => {
+    let instance = await FundRaiser.new("100", "10000", "1000");
+    let alice = accounts[0];
+    let bob = accounts[1];
+
+    let contribution = await instance.contribute({from: bob, value: 10000});
+    assert.equal(contribution.logs[0].event, "Contribution");
+
+    try {
+      await instance.createRequest("Request 01", "0", alice, {from: alice});
+      assert.fail("Spending Request of zero value not allowed. Request creation should fail");
+    } catch (err) {
+      assert(err.toString().includes("Spending request value cannot be zero"), "Message: " + err);
+    }
+  });
+
   it ("Spending Request from non-owner should fail", async() => {
     let instance = await FundRaiser.new("100", "10000", "1000");
     let alice = accounts[0];
@@ -149,6 +165,22 @@ contract("04 - Spending Requests", async(accounts) => {
       assert.fail("Spending Request above amount available not allowed. Request creation should fail");
     } catch (err) {
       assert(err.toString().includes("Spending request value greater than amount available"), "Message: " + err);
+    }
+  });
+
+  it ("Spending Request recipient of address zero should fail", async() => {
+    let instance = await FundRaiser.new("100", "10000", "1000");
+    let alice = accounts[0];
+    let bob = accounts[1];
+
+    let contribution = await instance.contribute({from: bob, value: 10000});
+    assert.equal(contribution.logs[0].event, "Contribution");
+
+    try {
+      await instance.createRequest("Request 01", "10000", "0x0000000000000000000000000000000000000000", {from: alice});
+      assert.fail("Spending Request recipient of address zero not allowed. Request creation should fail");
+    } catch (err) {
+      assert(err.toString().includes("Invalid Recipient of address zero"), "Message: " + err);
     }
   });
 

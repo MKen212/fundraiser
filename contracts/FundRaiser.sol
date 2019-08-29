@@ -33,6 +33,7 @@ contract FundRaiser {
   event RequestCreated(address indexed from, uint256 requestId, string description, uint256 value, address recipient);
   event Vote(address indexed from, uint256 requestId);
   event PaymentReleased(address indexed from, uint256 requestId, uint256 value, address recipient);
+  event OwnerChanged(address indexed to);
 
   constructor(uint256 _duration, uint256 _goal, uint256 _minimumContribution) public {
     deadline = block.number + _duration;
@@ -61,6 +62,17 @@ contract FundRaiser {
    */
   function() external {
     revert("Fallback method not allowed");
+  }
+
+  /**
+   * @dev Change the owner of the contract
+   * @dev Can only be actioned by the existing owner
+   */
+  function changeOwner(address _newOwner) public onlyOwner returns (bool) {
+    require(_newOwner != address(0), "Invalid Owner change to address zero");
+    owner = _newOwner;
+    emit OwnerChanged(_newOwner);
+    return true;
   }
 
   /**
@@ -101,8 +113,10 @@ contract FundRaiser {
    * @dev Require that value does not exceed total amount raised
    */
   function createRequest(string memory _description, uint256 _value, address payable _recipient) public onlyOwner goalReached returns (bool) {
+    require(_value > 0, "Spending request value cannot be zero");
     require(_value <= amountRaised, "Spending request value greater than amount raised");
     require(_value <= address(this).balance, "Spending request value greater than amount available");
+    require(_recipient != address(0), "Invalid Recipient of address zero");
 
     Request memory newRequest = Request({
       description: _description,
@@ -164,6 +178,7 @@ contract FundRaiser {
     thisRequest.recipient.transfer(thisRequest.value);
     emit PaymentReleased(msg.sender, _index, thisRequest.value, thisRequest.recipient);
     thisRequest.completed = true;
+    return true;
   }
 
   /**
