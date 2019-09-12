@@ -3,7 +3,6 @@
 /**
  * FundRaiser - Test Scripts 06
  * Covers SafeMath Functions
- * @author: Mark Kensington
  * NOTE: These tests require the testAdd & testSub functions from FundRaiser.sol
  * to be un-commented in order to expose the internal library functions
  */

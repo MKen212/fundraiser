@@ -3,7 +3,6 @@
 /**
  * FundRaiser - Test Scripts 02
  * Covers Contributions
- * @author: Mark Kensington
  */
 
 const assert = require("assert");

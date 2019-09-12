@@ -1,0 +1,224 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="decription" content="Fund Raiser Tool using Ethereum Smart Contracts">
+  <meta name="keywords" content="Ether, Fund Raiser, Crypto, ETH, Smart Contract">
+  <meta name="author" content="Malarena SA">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta http-equiv="X-UA-Compatible" content="ie=edge">
+  <title>Ether Fund Raiser</title>
+  <link rel="icon" type="image/png" sizes="96x96" href="favicon-96x96.png">
+  <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.3.1/css/bootstrap.min.css" integrity="sha384-ggOyR0iXCbMQv3Xipma34MD+dH/1fQ784/j6cY/iJTQUOhcWr7x9JvoRxT2MZw1T" crossorigin="anonymous">
+  <script src="https://code.jquery.com/jquery-3.3.1.slim.min.js" integrity="sha384-q8i/X+965DzO0rT7abK41JStQIAqVgRVzpbzo5smXKp4YfRvH+8abtTE1Pi6jizo" crossorigin="anonymous"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/popper.js/1.14.7/umd/popper.min.js" integrity="sha384-UO2eT0CpHqdSJQ6hJty5KVphtPhzWj9WO1clHTMGa3JDZwrnQq4sF86dIHNDz0W1" crossorigin="anonymous"></script>
+  <script src="https://stackpath.bootstrapcdn.com/bootstrap/4.3.1/js/bootstrap.min.js" integrity="sha384-JjSmVgyd0p3pXB1rRibZUAYoIIy6OrQ6VrjIEaFf/nJGzIxFDsf4x0xIM+B07jRM" crossorigin="anonymous"></script>
+  <script src="https://cdn.jsdelivr.net/gh/ethereum/web3.js@1.0.0-beta.37/dist/web3.min.js"></script>
+  <script src="./fundraiser.js"></script>
+  <script src="./fundraiser_abi.js"></script>
+</head>
+
+<body>
+  <!-- Header Section -->
+  <div class="container-fluid bg-light">
+    <div class="row">
+      <!-- Title -->
+      <div class="col-3 text-left" id="logo">
+        <h3><img src="logo.png" /> Ether Fund Raiser</h3>
+        <p class="small">Using Ethereum Smart Contracts to raise funds</p>
+      </div>
+      <!-- Navigation Menu -->
+      <div class="col-4 mt-3" id="navbar">
+        <ul class="nav nav-pills nav-fill" id="tab" role="tablist">
+          <li class="nav-item">
+            <a class="nav-link active" id="home-tab" data-toggle="pill" href="#home-content" role="tab" aria-controls="home" aria-selected="true">Home</a>
+          </li>
+          <li class="nav-item">
+            <a class="nav-link" id="deploy-tab" data-toggle="pill" href="#deploy-content" role="tab" aria-controls="deploy" aria-selected="false">Deploy New</a>
+          </li>
+          <li class="nav-item">
+            <a class="nav-link" id="interact-tab" data-toggle="pill" href="#interact-content" role="tab" aria-controls="interact" aria-selected="false">Interact</a>
+          </li>
+          <li class="nav-item">
+            <a class="nav-link" id="info-tab" data-toggle="pill" href="#info-content" role="tab" aria-controls="info" aria-selected="false">Contract Info</a>
+          </li>
+        </ul>
+      </div>
+      <!-- Information Section -->
+      <div class="col-5 text-right" id="info">
+        <ul class="list-unstyled">
+          <li>Network: <span class="text-info" id="top-network"></span></li>
+          <li>Your Account: <span class="text-info" id="top-account"></span></li>
+          <li>Smart Contract: <span class="text-info" id="top-contract"></span></li>
+        </ul>
+      </div>
+    </div>
+  </div>
+
+  <!-- Home Page-->
+  <div class="container tab-content mt-3" id="tabContent">
+    <div class="tab-pane fade show active" id="home-content" role="tabpanel" aria-labelledby="home-tab">
+      <p>Welcome to Ether Fund Raiser.</p>
+      <p>To proceed, please enter the Fund Raiser Smart Contract you wish to interact with, or click on DEPLOY NEW to create a new contract.</p>
+      
+    </div>
+    
+    <div class="tab-pane fade" id="deploy-content" role="tabpanel" aria-labelledby="deploy-tab">
+      <p>Deploy</p>
+    </div>
+    
+    <div class="tab-pane fade" id="interact-content" role="tabpanel" aria-labelledby="interact-tab">
+      <p>Interact</p>
+    </div>
+    
+    <!-- Contract Page -->
+    <div class="tab-pane fade" id="info-content" role="tabpanel" aria-labelledby="info-tab">
+      <!-- Get Contract Details Input-Group -->
+      <div class="row">
+        <label for="contractAccount">Enter the Smart Contract Address for your Fund Raising campaign and click on [Get Details].</label>
+        <div class="input-group mb-3">
+          <div class="input-group-prepend">
+            <span class="input-group-text">Smart Contract Address:</span>
+          </div>
+          <input type="text" class="form-control" id="contractAccount" placeholder="0x..." />
+          <div class="input-group-append">
+            <button type="button" onclick=connectContract() class="btn btn-outline-secondary">Get Details</button>
+          </div>
+        </div>
+      </div>
+
+      <!-- Main Contract Information Table -->
+      <div class="row">
+        <table class="table table-bordered table-striped table-sm">
+          <tr>
+            <td colspan="2">Owner:</td>
+            <td colspan="3"><span id="contractOwner"></span></td>
+          </tr>
+          <tr>
+            <td>Deadline:</td>
+            <td id="contractDeadlineStatusBg"><span id="contractDeadlineStatus"></span></td>
+            <td>Block <span id="contractDeadlineBlock"></span></td>
+            <td><span id="contractDeadlineLeft"></span> blocks left</td>
+            <td><span id="contractDeadlineDHM"></span></td>
+          </tr>
+          <tr>
+            <td>Goal:</td>
+            <td id="contractGoalStatusBg"><span id="contractGoalStatus"></span></td>
+            <td><span id="contractGoalWei"></span> wei</td>
+            <td>ETH: <span id="contractGoalETH"></span></td>
+            <td>USD: <span id="contractGoalUSD"></span></td>
+          </tr>
+          <tr>
+            <td colspan="2">Amount Raised:</td>
+            <td><span id="contractAmtRaisedWei"></span> wei</td>
+            <td>ETH: <span id="contractAmtRaisedETH"></span></td>
+            <td>USD: <span id="contractAmtRaisedUSD"></span></td>
+          </tr>
+          <tr>
+            <td colspan="2">Amount Left To Raise:</td>
+            <td><span id="contractAmtToRaiseWei"></span> wei</td>
+            <td>ETH: <span id="contractAmtToRaiseETH"></span></td>
+            <td>USD: <span id="contractAmtToRaiseUSD"></span></td>
+          </tr>
+          <tr>
+            <td colspan="2">Minimum Contribution Amount:</td>
+            <td><span id="contractMinContWei"></span> wei</td>
+            <td>ETH: <span id="contractMinContETH"></span></td>
+            <td>USD: <span id="contractMinContUSD"></span></td>
+          </tr>
+          <tr>
+            <td colspan="2">Number of Contributors:</td>
+            <td colspan="3"><span id="contractTotalContributors"></span></td>
+          </tr>
+          <tr>
+            <td >Contract Balance Remaining:</td>
+            <td id="contractBalanceStatusBg"><span id="contractBalanceStatus"></span></td>
+            <td><span id="contractBalanceWei"></span> wei</td>
+            <td>ETH: <span id="contractBalanceETH"></span></td>
+            <td>USD: <span id="contractBalanceUSD"></span></td>
+          </tr>
+          <tr>
+            <td>Your Account Balance:</td>
+            <td id="accountBalanceStatusBg"><span id="accountBalanceStatus"></span></td>
+            <td><span id="accountBalanceWei"></span> wei</td>
+            <td>ETH: <span id="accountBalanceETH"></span></td>
+            <td>USD: <span id="accountBalanceUSD"></span></td>
+          </tr>
+          <tr>
+            <td colspan="2">Your Contributions:</td>
+            <td><span id="accountContributionsWei"></span> wei</td>
+            <td>ETH: <span id="accountContributionsETH"></span></td>
+            <td>USD: <span id="accountContributionsUSD"></span></td>
+          </tr>
+        </table>
+      </div>
+
+      <!-- Actions Section-->
+      <div class="row mt-3">
+        <div class="col-5">
+          <!-- Contributor Actions -->
+          <table class="table table-bordered table-sm">
+            <tr>
+              <th>Contributor Actions:</th>
+            </tr>
+          </table>
+          <!-- Make Contribution -->
+          <div class="input-group mb-3">
+            <div class="input-group-prepend">
+              <span class="input-group-text">Amount:</span>
+            </div>
+            <input type="text" class="form-control" id="contributionAmt" placeholder="Amount in Wei" />
+            <div class="input-group-append">
+              <button type="button" onclick=sendContribution() class="btn btn-outline-secondary">Contribute</button>
+            </div>
+          </div>
+          <!-- Get Refund -->
+          <div class="input-group mb-3">
+            <div class="input-group-prepend">
+              <span class="input-group-text">Amount:</span>
+            </div>
+            <input type="text" class="form-control bg-light" id="refundAmt" readonly />
+            <div class="input-group-append">
+              <button type="button" onclick=processRefund() class="btn btn-outline-secondary">Refund</button>
+            </div>
+          </div>         
+        </div>
+        <div class="col-7">
+          <!-- Owner Actions -->
+          <table class="table table-bordered table-sm">
+            <tr>
+              <th>Owner Actions:</th>
+            </tr>
+          </table>
+          <!-- Check Contribution -->
+          <div class="input-group mb-3">
+            <div class="input-group-prepend">
+              <span class="input-group-text">Address:</span>
+            </div>
+            <input type="text" class="form-control" id="contributorAccount" placeholder="Contributor's Address" />
+            <div class="input-group-append">
+              <button type="button" onclick=checkContribution() class="btn btn-outline-secondary">Check Contribution</button>
+            </div>
+          </div>
+          <!-- Change Owner -->
+          <div class="input-group mb-3">
+            <div class="input-group-prepend">
+              <span class="input-group-text">Address:</span>
+            </div>
+            <input type="text" class="form-control" id="newOwnerAccount" placeholder="New Owner's Address" />
+            <div class="input-group-append">
+              <button type="button" onclick=changeOwner() class="btn btn-outline-secondary">Change Owner</button>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="container mt-3 border">
+    <u>Events:</u>
+    <div class="overflow-auto" style="max-height: 150px" id="events"></div>
+  </div>
+
+</body>
+</html>

@@ -33,7 +33,7 @@ contract FundRaiser {
   event RequestCreated(address indexed from, uint256 requestId, string description, uint256 value, address recipient);
   event Vote(address indexed from, uint256 requestId);
   event PaymentReleased(address indexed from, uint256 requestId, uint256 value, address recipient);
-  event OwnerChanged(address indexed to);
+  event OwnerChanged(address indexed from, address to);
 
   constructor(uint256 _duration, uint256 _goal, uint256 _minimumContribution) public {
     deadline = block.number + _duration;
@@ -71,7 +71,7 @@ contract FundRaiser {
   function changeOwner(address _newOwner) public onlyOwner returns (bool) {
     require(_newOwner != address(0), "Invalid Owner change to address zero");
     owner = _newOwner;
-    emit OwnerChanged(_newOwner);
+    emit OwnerChanged(msg.sender, _newOwner);
     return true;
   }
 

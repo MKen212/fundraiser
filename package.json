@@ -2,12 +2,14 @@
   "name": "fundraiser",
   "version": "1.0.0",
   "description": "Fund Raising Smart Contract",
-  "main": "truffle-config.js",
+  "main": "index.js",
   "directories": {
     "test": "test"
   },
   "scripts": {
-    "test": "truffle test"
+    "build": "truffle compile",
+    "test": "truffle test",
+    "server": "node index.js"
   },
   "repository": {
     "type": "git",
@@ -18,5 +20,8 @@
   "bugs": {
     "url": "https://github.com/MKen212/fundraiser/issues"
   },
-  "homepage": "https://github.com/MKen212/fundraiser#readme"
+  "homepage": "https://github.com/MKen212/fundraiser#readme",
+  "dependencies": {
+    "express": "^4.17.1"
+  }
 }

@@ -3,7 +3,6 @@
 /**
  * FundRaiser - Test Scripts 01
  * Covers Contract Set-up & Admin Functions
- * @author: Mark Kensington
  */
 
 const assert = require("assert");
