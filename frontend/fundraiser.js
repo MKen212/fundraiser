@@ -1,5 +1,5 @@
 "use strict";
-/* global Web3 fundRaiserABI */
+/* global Web3 fundRaiserABI fundRaiserByteCode */
 /**
  * Ether Fund Raiser
  * Deploys & interacts with FundRaiser Smart Contracts on Ethereum
@@ -18,8 +18,9 @@ let contractOpen;  // True/False of whether contract Deadline is open or passed
 let goalOpen; // True/False of whether contract Goal is open or passed
 let goalWei = new BN;  // Contract Goal in Wei
 let minContWei = new BN;  // Contract Minimum Contribution Amount in Wei
+let balWei = new BN; // Contract Balance in Wei
 let accountBalWei = new BN;  // Account Balance in Wei
-let maxRefundWei = new BN; // Contract Maximum Refund Amount in Wei
+let accountMaxRefundWei = new BN; // Account Maximum Refund Amount in Wei
 let message;  // Message text to display
 
 // Initialise ethereum API
@@ -27,6 +28,7 @@ window.ethereum.enable()
   .then(function (accounts) {
     getNetwork();
     getAccount(accounts);
+    loadContractABI();
   })
   .catch(function (error) {
     console.log(error);
@@ -40,7 +42,9 @@ window.ethereum.enable()
 window.ethereum.on("accountsChanged", function(accounts) {
   getAccount(accounts);
   if (contractInstance != undefined) {
-    readContract(contractInstance._address);  // Refresh Contract Information Screen
+    if (contractInstance._address != null) {
+      readContract(contractInstance._address);  // Refresh Contract Information Screen
+    }
   }
 });
 
@@ -72,6 +76,16 @@ function getAccount(accounts) {
   console.log(`Account selected: ${defaultAccount}`);
 }
 
+// Function to load contract ABI
+function loadContractABI() {
+  contractInstance = new web3.eth.Contract(fundRaiserABI, {
+    from: defaultAccount,
+    gasPrice: '1000000000' // default gas price in wei, 1 gwei in this case for Goerli
+    // gasPrice: '20000000000' // default gas price in wei, 20 gwei in this case for Mainnet
+  });
+  console.log(`Contract ABI loaded.`);
+}
+
 // Function to connect to smart contract
 async function connectContract() {
   let contractAddress = document.getElementById("contractAccount").value;
@@ -94,10 +108,7 @@ async function getContract(contractAddress) {
       showMessage("alert alert-danger", message);
       console.error(message);
     } else {
-      contractInstance = new web3.eth.Contract(fundRaiserABI, contractAddress, {
-        from: defaultAccount,
-        gasPrice: '20000000000' // default gas price in wei, 20 gwei in this case
-      });
+      contractInstance.options.address = contractAddress;
       document.getElementById("top-contract").innerHTML = contractAddress;
       message = `Contract at ${contractAddress} is connected.`;
       showMessage("alert alert-success", message);
@@ -113,7 +124,15 @@ async function readContract(contractAddress) {
     if (error) console.error(error);
     if (result) {
       contractOwner = result;
+      if (contractOwner == defaultAccount) {
+        document.getElementById("contractOwnedStatusBg").className = "table-success";
+        document.getElementById("contractOwnedStatus").innerHTML = "Me";
+      } else {
+        document.getElementById("contractOwnedStatusBg").className = "table-danger";
+        document.getElementById("contractOwnedStatus").innerHTML = "Not Me";
+      }
       document.getElementById("contractOwner").innerHTML = result;
+      document.getElementById("inputReqRecipient").value = result;  //Recipient defaults to owner
       console.log("Contract Owner:", result);
     }
   });
@@ -133,7 +152,7 @@ async function readContract(contractAddress) {
       let remBlocks = currentBlockNumber > result ? 0 : (result - currentBlockNumber);
       if (remBlocks > 5760) {
         contractOpen = true;
-        document.getElementById("contractDeadlineStatusBg").className =  "table-success";
+        document.getElementById("contractDeadlineStatusBg").className = "table-success";
         document.getElementById("contractDeadlineStatus").innerHTML = "Open";
       } else if (remBlocks > 0) {
         contractOpen = true;
@@ -247,7 +266,9 @@ async function readContract(contractAddress) {
         document.getElementById("contractBalanceStatusBg").className ="table-success";
         document.getElementById("contractBalanceStatus").innerHTML = "Spendable";        
       }
+      balWei = web3.utils.toBN(result);
       document.getElementById("contractBalanceWei").innerHTML = result;
+      document.getElementById("inputReqValue").value = result;  // Request Value defaults to Bal
       let contractBalETH = web3.utils.fromWei(result);
       document.getElementById("contractBalanceETH").innerHTML = contractBalETH;
       let contractBalUSD = contractBalETH > 0 ? (contractBalETH * rateUSD) : 0.00;
@@ -255,6 +276,12 @@ async function readContract(contractAddress) {
       console.log("Contract Balance:", result);
     }
   });
+
+  // Get Spending Requests
+  // THIS NEEDS WORK...
+  // NEED New Function to display SR count
+  // Also look at changing Id to ID...
+
 
   // Get Default Account Balance
   await web3.eth.getBalance(defaultAccount, (error, result) => {
@@ -281,9 +308,9 @@ async function readContract(contractAddress) {
   await contractInstance.methods.contributions(defaultAccount).call(function (error, result) {
     if (error) console.error(error);
     if (result) {
-      maxRefundWei = web3.utils.toBN(result);
+      accountMaxRefundWei = web3.utils.toBN(result);
       document.getElementById("accountContributionsWei").innerHTML = result;
-      document.getElementById("refundAmt").value = maxRefundWei.toString();  // Pre-fill refundAmt
+      document.getElementById("refundAmt").value = accountMaxRefundWei.toString();  // Pre-fill refundAmt
       let accountContETH = web3.utils.fromWei(result);
       document.getElementById("accountContributionsETH").innerHTML = accountContETH;
       let accountContUSD = accountContETH > 0 ? (accountContETH * rateUSD) : 0.00;
@@ -296,7 +323,7 @@ async function readContract(contractAddress) {
 // Function to Send Contribution
 async function sendContribution() {
   let sendAmount = web3.utils.toBN(document.getElementById("contributionAmt").value);
-  if (contractInstance == undefined) {
+  if (contractInstance._address == null) {
     message = `Error: No Contract Selected.`;
     console.error(message);
     showMessage("alert alert-danger", message);
@@ -318,7 +345,7 @@ async function sendContribution() {
       value: sendAmount
     })
       .once("transactionHash", function(hash) {
-        console.log("Transaction #", hash);
+        console.log("Contribute Transaction #", hash);
         message = `Contribute Transaction ${hash} submitted to Network.`;
         showMessage("alert alert-warning", message);
       })
@@ -327,10 +354,10 @@ async function sendContribution() {
         showMessage("alert alert-danger", error.message + "- Please see console (F12) for further details.");
       })
       .then(function(receipt) {
-        console.log("Transaction Receipt:", receipt);
+        console.log("Contribute Transaction Receipt:", receipt);
         let eventAddress = receipt.events.Contribution.returnValues.from; 
         let eventValue = receipt.events.Contribution.returnValues.value;
-        message = `Contribution from ${eventAddress} of ${eventValue} processed successfully.`;
+        message = `Contribution from ${eventAddress} of ${eventValue} wei processed successfully.`;
         showMessage("alert alert-success", message);
         readContract(contractInstance._address);  // Refresh Contract Information Screen
       });
@@ -339,11 +366,11 @@ async function sendContribution() {
 
 // Function to Get Refund
 async function processRefund() {
-  if (contractInstance == undefined) {
+  if (contractInstance._address == null) {
     message = `Error: No Contract Selected.`;
     console.error(message);
     showMessage("alert alert-danger", message);
-  } else if (maxRefundWei.isZero()) {
+  } else if (accountMaxRefundWei.isZero()) {
     message = `Error: No Contribution to return. Refund cannot be processed.`;
     console.error(message);
     showMessage("alert alert-danger", message);
@@ -359,17 +386,17 @@ async function processRefund() {
     await contractInstance.methods.getRefund().send( {
       from: defaultAccount
     }).once("transactionHash", function(hash) {
-      console.log("Transaction #", hash);
+      console.log("Refund Transaction #", hash);
       message = `Refund Transaction ${hash} submitted to Network.`;
       showMessage("alert alert-warning", message);
     }).on("error", function(error) {
       console.error(error);
       showMessage("alert alert-danger", error.message + "- Please see console (F12) for further details.");
     }).then(function(receipt) {
-      console.log("Transaction Receipt:", receipt);
+      console.log("Refund Transaction Receipt:", receipt);
       let eventAddress = receipt.events.Refund.returnValues.to; 
       let eventValue = receipt.events.Refund.returnValues.value;
-      message = `Refund to ${eventAddress} of ${eventValue} processed successfully.`;
+      message = `Refund to ${eventAddress} of ${eventValue} wei processed successfully.`;
       showMessage("alert alert-success", message);
       readContract(contractInstance._address);  // Refresh Contract Information Screen
     });
@@ -379,7 +406,7 @@ async function processRefund() {
 // Function to Check Contribution
 async function checkContribution() {
   let checkAddress = document.getElementById("contributorAccount").value;
-  if (contractInstance == undefined) {
+  if (contractInstance._address == null) {
     message = `Error: No Contract Selected.`;
     console.error(message);
     showMessage("alert alert-danger", message);
@@ -405,7 +432,7 @@ async function checkContribution() {
 
 async function changeOwner() {
   let newAddress = document.getElementById("newOwnerAccount").value;
-  if (contractInstance == undefined) {
+  if (contractInstance._address == null) {
     message = `Error: No Contract Selected.`;
     console.error(message);
     showMessage("alert alert-danger", message);
@@ -421,14 +448,14 @@ async function changeOwner() {
     await contractInstance.methods.changeOwner(newAddress).send( {
       from: defaultAccount
     }).once("transactionHash", function(hash) {
-      console.log("Transaction #", hash);
+      console.log("Owner Change Transaction #", hash);
       message = `Owner Change Transaction ${hash} submitted to Network.`;
       showMessage("alert alert-warning", message);
     }).on("error", function(error) {
       console.error(error);
       showMessage("alert alert-danger", error.message + "- Please see console (F12) for further details.");
     }).then(function(receipt) {
-      console.log("Transaction Receipt:", receipt);
+      console.log("Owner Change Transaction Receipt:", receipt);
       let eventAddressFrom = receipt.events.OwnerChanged.returnValues.from;
       let eventAddressTo = receipt.events.OwnerChanged.returnValues.to;
       message = `Owner Change from ${eventAddressFrom} to ${eventAddressTo} processed successfully.`;
@@ -437,6 +464,116 @@ async function changeOwner() {
       document.getElementById("newOwnerAccount").value = "";  // Reset newOwnerAccount
     });
   }
+}
+
+async function deployContract() {
+  let deployDuration = document.getElementById("inputDuration").value;
+  let deployGoal = document.getElementById("inputGoal").value;
+  let deployMinContribution = document.getElementById("inputMinContribution").value;
+  if (deployDuration == "" || deployDuration <=0) {
+    message = `Error: Invalid Duration.`;
+    console.error(message);
+    showMessage("alert alert-danger", message);
+  } else if (deployDuration > 1036800) {
+    message = `Error: Duration over 6 months not currently allowed.`;
+    console.error(message);
+    showMessage("alert alert-danger", message);
+  } else if (deployGoal == "" || deployGoal < 0) {
+    message = `Error: Invalid Goal Amount.`;
+    console.error(message);
+    showMessage("alert alert-danger", message);
+  } else if (deployMinContribution == "" || deployMinContribution < 0) {
+    message = `Error: Invalid Minimum Contribution Amount.`;
+    console.error(message);
+    showMessage("alert alert-danger", message);
+  } else {
+    await contractInstance.deploy( {
+      data: fundRaiserByteCode,
+      arguments: [deployDuration, deployGoal, deployMinContribution]
+    }).send( {
+      from: defaultAccount,
+      gas: 1750000
+    }).on("transactionHash", function(hash) {
+      console.log("Deploy Transaction #", hash);
+      message = `Deploy Transaction ${hash} submitted to Network.`;
+      showMessage("alert alert-warning", message);
+    }).on("error", function(error) {
+      console.error(error);
+      showMessage("alert alert-danger", error.message + "- Please see console (F12) for further details.");
+    }).then(function(newContractInstance) {
+      console.log("New Contract Address:", newContractInstance.options.address);
+      message = `New FundRaiser Contract deployed successfully at: ${newContractInstance.options.address}.`;
+      showMessage("alert alert-success", message);
+      contractInstance.options.address = newContractInstance.options.address;
+      document.getElementById("top-contract").innerHTML = newContractInstance.options.address;
+      document.getElementById("contractAccount").value = newContractInstance.options.address;
+      readContract(contractInstance._address);  // Refresh Contract Information Screen
+    });
+  }
+}
+
+async function createSpendRequest() {
+  let createReqDescription = document.getElementById("inputReqDesc").value;
+  let createReqValue = document.getElementById("inputReqValue").value;
+  let createReqRecipient = document.getElementById("inputReqRecipient").value;
+  if (contractInstance._address == null) {
+    message = `Error: No Contract Selected.`;
+    console.error(message);
+    showMessage("alert alert-danger", message);
+  } else if (createReqDescription == "") {
+    message = `Error: Description required.`;
+    console.error(message);
+    showMessage("alert alert-danger", message);
+  } else if (createReqValue == "" || createReqValue <= 0) {
+    message = `Error: Request value must be greater than zero.`;
+    console.error(message);
+    showMessage("alert alert-danger", message);
+  } else if (createReqValue > balWei) {
+    message = `Error: Request Value is greater than Contract Balance.`;
+    console.error(message);
+    showMessage("alert alert-danger", message);
+  } else if (web3.utils.isAddress(createReqRecipient) == false) {
+    message = `Error: Recipient Address is invalid.`;
+    console.error(message);
+    showMessage("alert alert-danger", message);
+  } else if (contractOwner != defaultAccount) {
+    message = `Error: This action can only be processed by the Contract Owner.`;
+    console.error(message);
+    showMessage("alert alert-danger", message);
+  } else {
+    if (createReqRecipient != contractOwner) {
+      message = `Warning: Recipient Address is NOT the Contract Owner...but processing anyway.`;
+      showMessage("alert alert-warning", message);
+    }
+    await contractInstance.methods.createRequest(createReqDescription, createReqValue, createReqRecipient).send( {
+      from: defaultAccount
+    }).once("transactionHash", function(hash) {
+      console.log("Spending Request Transaction #", hash);
+      message = `Spending Request Transaction ${hash} submitted to Network.`;
+      showMessage("alert alert-warning", message);
+    }).on("error", function(error) {
+      console.error(error);
+      showMessage("alert alert-danger", error.message + "- Please see console (F12) for further details.");
+    }).then(function(receipt) {
+      console.log("Spending Request   Transaction Receipt:", receipt);
+      let eventRequestId = receipt.events.RequestCreated.returnValues.requestId;  
+      let eventAddress = receipt.events.RequestCreated.returnValues.from;
+      let eventValue = receipt.events.RequestCreated.returnValues.value;
+      message = `Spending Request ID ${eventRequestId} from ${eventAddress} of ${eventValue} wei processed successfully.`;
+      showMessage("alert alert-success", message);
+    });
+  }
+}
+
+async function getSpendRequest() {
+  let getreqId = document.getElementById("requestId").value;
+  await contractInstance.methods.requests(getreqId).call(function (error, result) {
+    if (error) console.error(error);
+    if (result) {
+      console.log(result);
+      // UP TO HEAR AND ALSO TOTAL SRs ABOVE
+    }
+  });
 }
 
 // Function to show messages

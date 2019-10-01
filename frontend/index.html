@@ -16,6 +16,7 @@
   <script src="https://cdn.jsdelivr.net/gh/ethereum/web3.js@1.0.0-beta.37/dist/web3.min.js"></script>
   <script src="./fundraiser.js"></script>
   <script src="./fundraiser_abi.js"></script>
+  <script src="fundraiser_bytecode.js"></script>
 </head>
 
 <body>
@@ -23,12 +24,12 @@
   <div class="container-fluid bg-light">
     <div class="row">
       <!-- Title -->
-      <div class="col-3 text-left" id="logo">
+      <div class="col-sm-3 text-left" id="logo">
         <h3><img src="logo.png" /> Ether Fund Raiser</h3>
         <p class="small">Using Ethereum Smart Contracts to raise funds</p>
       </div>
       <!-- Navigation Menu -->
-      <div class="col-4 mt-3" id="navbar">
+      <div class="col-sm4 mt-3" id="navbar">
         <ul class="nav nav-pills nav-fill" id="tab" role="tablist">
           <li class="nav-item">
             <a class="nav-link active" id="home-tab" data-toggle="pill" href="#home-content" role="tab" aria-controls="home" aria-selected="true">Home</a>
@@ -45,7 +46,7 @@
         </ul>
       </div>
       <!-- Information Section -->
-      <div class="col-5 text-right" id="info">
+      <div class="col-sm-5 text-right" id="info">
         <ul class="list-unstyled">
           <li>Network: <span class="text-info" id="top-network"></span></li>
           <li>Your Account: <span class="text-info" id="top-account"></span></li>
@@ -63,19 +64,108 @@
       
     </div>
     
+    <!-- Deploy Page -->
     <div class="tab-pane fade" id="deploy-content" role="tabpanel" aria-labelledby="deploy-tab">
-      <p>Deploy</p>
+      <p>Enter the contract duration (in blocks), and the goal and minimum contribution level (both in wei) and click on [Deploy].</p>
+      <div class="input-group mb-3">
+        <div class="input-group-prepend">
+          <span class="input-group-text">Duration:</span>
+        </div>
+        <input type="number" class="form-control" id="inputDuration" min="1" max="1036800" placeholder="Duration in Blocks" /> <!-- Maximum duration of 6 months-->
+        <div class="input-group-append">
+          <span class="input-group-text">Blocks</span>
+        </div>
+      </div>
+      <div class="input-group mb-3">
+        <div class="input-group-prepend">
+          <span class="input-group-text">Goal:</span>
+        </div>
+        <input type="number" class="form-control" id="inputGoal" min="0" placeholder="Amount in Wei" />
+        <div class="input-group-append">
+          <span class="input-group-text">Eth</span>
+        </div>    
+      </div>
+      <div class="input-group mb-3">
+        <div class="input-group-prepend">
+          <span class="input-group-text">Minimum Contribution:</span>
+        </div>
+        <input type="number" class="form-control" id="inputMinContribution" min="0" placeholder="Amount in Wei" />
+        <div class="input-group-append">
+          <span class="input-group-text">Eth</span>
+        </div> 
+      </div>
+      <button type="button" onclick=deployContract() class="btn btn-outline-secondary">Deploy</button>
     </div>
     
+    <!-- Interact Page -->
     <div class="tab-pane fade" id="interact-content" role="tabpanel" aria-labelledby="interact-tab">
-      <p>Interact</p>
+      <p>Create a Spending Request</p>
+      <div class="input-group mb-3">
+        <div class="input-group-prepend">
+          <span class="input-group-text">Description:</span>
+        </div>
+        <input type="text" class="form-control" id="inputReqDesc" placeholder="Request Description" />
+      </div>
+      <div class="input-group mb-3">
+        <div class="input-group-prepend">
+          <span class="input-group-text">Request Value:</span>
+        </div>
+        <input type="number" class="form-control" id="inputReqValue" min="1" placeholder="Amount in Wei" />
+      </div>
+      <div class="input-group mb-3">
+        <div class="input-group-prepend">
+          <span class="input-group-text">Recipient Address:</span>
+        </div>
+        <input type="text" class="form-control" id="inputReqRecipient" placeholder="0x..." />
+      </div>
+      <button type="button" onclick=createSpendRequest() class="btn btn-outline-secondary">Create Request</button>
+      <br>
+      <br>
+      <br>
+      <div class="row">
+        <div class="input-group mb-3">
+          <div class="input-group-prepend">
+            <span class="input-group-text">Spending Request ID:</span>
+          </div>
+          <input type="number" class="form-control" id="requestId" placeholder="0" />
+          <div class="input-group-append">
+            <button type="button" onclick=getSpendRequest() class="btn btn-outline-secondary">Get Details</button>
+          </div>
+        </div>
+      </div>
+      <div class="row">
+        <table class="table table-bordered table-striped table-sm">
+          <tr>
+            <td>Description:</td>
+            <td colspan="3"><span id="requestDescription"></span></td>
+          </tr>
+          <tr>
+            <td>Value:</td>
+            <td><span id="requestValueWei"></span> wei</td>
+            <td>ETH: <span id="requestValueETH"></span></td>
+            <td>USD: <span id="requestValueUSD"></span></td>
+          </tr>
+          <tr>
+            <td>Recipient Address:</td>
+            <td colspan="3"><span id="requestRecipient"></span></td>
+          </tr>
+          <tr>
+            <td>Number of Voters:</td>
+            <td colspan="3"><span id="requestNoOfVoters"></span></td>
+          </tr>
+          <tr>
+            <td>Completed:</td>
+            <td colspan="3"><span id="requestCompleted"></span></td>
+          </tr>  
+        </table>
+      </div>
     </div>
     
     <!-- Contract Page -->
     <div class="tab-pane fade" id="info-content" role="tabpanel" aria-labelledby="info-tab">
       <!-- Get Contract Details Input-Group -->
       <div class="row">
-        <label for="contractAccount">Enter the Smart Contract Address for your Fund Raising campaign and click on [Get Details].</label>
+        <p>Enter the Smart Contract Address for your Fund Raising campaign and click on [Get Details].</p>
         <div class="input-group mb-3">
           <div class="input-group-prepend">
             <span class="input-group-text">Smart Contract Address:</span>
@@ -91,7 +181,8 @@
       <div class="row">
         <table class="table table-bordered table-striped table-sm">
           <tr>
-            <td colspan="2">Owner:</td>
+            <td>Owner:</td>
+            <td id="contractOwnedStatusBg"><span id="contractOwnedStatus"></span></td>
             <td colspan="3"><span id="contractOwner"></span></td>
           </tr>
           <tr>
@@ -138,6 +229,10 @@
             <td>USD: <span id="contractBalanceUSD"></span></td>
           </tr>
           <tr>
+            <td colspan="2">Number of Spending Requests:</td>
+            <td colspan="3"><span id="contractSpendingRequests"></span></td>
+          </tr>
+          <tr>
             <td>Your Account Balance:</td>
             <td id="accountBalanceStatusBg"><span id="accountBalanceStatus"></span></td>
             <td><span id="accountBalanceWei"></span> wei</td>
@@ -155,7 +250,7 @@
 
       <!-- Actions Section-->
       <div class="row mt-3">
-        <div class="col-5">
+        <div class="col-sm-5">
           <!-- Contributor Actions -->
           <table class="table table-bordered table-sm">
             <tr>
@@ -183,7 +278,7 @@
             </div>
           </div>         
         </div>
-        <div class="col-7">
+        <div class="col-sm-7">
           <!-- Owner Actions -->
           <table class="table table-bordered table-sm">
             <tr>
