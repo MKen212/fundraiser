@@ -1,4 +1,13 @@
-const fundRaiserABI = [
+"use strict";
+/* eslint-disable no-unused-vars */
+
+/**
+ * Fundraiser - ABI
+ * Contains the ABI code required to communicate with the fundraiser Smart Contract
+ * Any changes to the Smart Contract code will require this file to be regenerated
+ */
+
+const FUND_RAISER_ABI = [
   {
     "constant": true,
     "inputs": [],
@@ -63,6 +72,20 @@ const fundRaiserABI = [
       {
         "name": "",
         "type": "bool"
+      }
+    ],
+    "payable": false,
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
+    "constant": true,
+    "inputs": [],
+    "name": "initialPaymentDeadline",
+    "outputs": [
+      {
+        "name": "",
+        "type": "uint256"
       }
     ],
     "payable": false,
@@ -186,6 +209,20 @@ const fundRaiserABI = [
   {
     "constant": true,
     "inputs": [],
+    "name": "totalRequests",
+    "outputs": [
+      {
+        "name": "",
+        "type": "uint256"
+      }
+    ],
+    "payable": false,
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
+    "constant": true,
+    "inputs": [],
     "name": "owner",
     "outputs": [
       {
@@ -228,6 +265,20 @@ const fundRaiserABI = [
     ],
     "payable": false,
     "stateMutability": "nonpayable",
+    "type": "function"
+  },
+  {
+    "constant": true,
+    "inputs": [],
+    "name": "amountPaidOut",
+    "outputs": [
+      {
+        "name": "",
+        "type": "uint256"
+      }
+    ],
+    "payable": false,
+    "stateMutability": "view",
     "type": "function"
   },
   {
@@ -276,6 +327,10 @@ const fundRaiserABI = [
     "inputs": [
       {
         "name": "_duration",
+        "type": "uint256"
+      },
+      {
+        "name": "_initialPaymentDuration",
         "type": "uint256"
       },
       {

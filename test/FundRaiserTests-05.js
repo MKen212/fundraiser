@@ -11,7 +11,7 @@ const FundRaiser = artifacts.require("FundRaiser");
 contract("05 - Voting", async(accounts) => {
 
   it("Standard Vote and hasVoted true check", async() => {
-    let instance = await FundRaiser.new("100", "10000", "1000");
+    let instance = await FundRaiser.new("100", "10", "10000", "1000");
     let alice = accounts[0];
     let bob = accounts[1];
 
@@ -32,7 +32,7 @@ contract("05 - Voting", async(accounts) => {
   });
 
   it("Vote for multiple requests", async() => {
-    let instance = await FundRaiser.new("100", "10000", "1000");
+    let instance = await FundRaiser.new("100", "10", "10000", "1000");
     let alice = accounts[0];
     let bob = accounts[1];
 
@@ -66,7 +66,7 @@ contract("05 - Voting", async(accounts) => {
    */
 
   it ("Vote for non-existent request should fail", async() => {
-    let instance = await FundRaiser.new("100", "10000", "1000");
+    let instance = await FundRaiser.new("100", "10", "10000", "1000");
     let alice = accounts[0];
     let bob = accounts[1];
 
@@ -85,7 +85,7 @@ contract("05 - Voting", async(accounts) => {
   });
 
   it ("Vote for completed request should fail", async() => {
-    let instance = await FundRaiser.new("100", "10000", "1000");
+    let instance = await FundRaiser.new("100", "10", "10000", "1000");
     let alice = accounts[0];
     let bob = accounts[1];
 
@@ -110,7 +110,7 @@ contract("05 - Voting", async(accounts) => {
   });
 
   it ("Vote for request by non-contributor should fail", async() => {
-    let instance = await FundRaiser.new("100", "10000", "1000");
+    let instance = await FundRaiser.new("100", "10", "10000", "1000");
     let alice = accounts[0];
     let bob = accounts[1];
     let peter = accounts[2];
@@ -130,7 +130,7 @@ contract("05 - Voting", async(accounts) => {
   });
 
   it ("Repeated Vote for same request should fail", async() => {
-    let instance = await FundRaiser.new("100", "10000", "1000");
+    let instance = await FundRaiser.new("100", "10", "10000", "1000");
     let alice = accounts[0];
     let bob = accounts[1];
 
@@ -152,7 +152,7 @@ contract("05 - Voting", async(accounts) => {
   });
 
   it("hasVoted false check", async() => {
-    let instance = await FundRaiser.new("100", "10000", "1000");
+    let instance = await FundRaiser.new("100", "10", "10000", "1000");
     let alice = accounts[0];
     let bob = accounts[1];
 
@@ -167,7 +167,7 @@ contract("05 - Voting", async(accounts) => {
   });
 
   it ("hasVoted check for non-existent request should fail", async() => {
-    let instance = await FundRaiser.new("100", "10000", "1000");
+    let instance = await FundRaiser.new("100", "10", "10000", "1000");
     let alice = accounts[0];
     let bob = accounts[1];
 

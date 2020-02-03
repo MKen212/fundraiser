@@ -1,7 +1,7 @@
 {
   "name": "fundraiser",
   "version": "1.0.0",
-  "description": "Fund Raising Smart Contract",
+  "description": "A Fund Raising dApp using Smart Contracts and voting to release payments",
   "main": "index.js",
   "directories": {
     "test": "test"
@@ -9,7 +9,8 @@
   "scripts": {
     "build": "truffle compile",
     "test": "truffle test",
-    "server": "node index.js"
+    "coverage": "solidity-coverage",
+    "start": "node index.js"
   },
   "repository": {
     "type": "git",
@@ -23,5 +24,8 @@
   "homepage": "https://github.com/MKen212/fundraiser#readme",
   "dependencies": {
     "express": "^4.17.1"
+  },
+  "devDependencies": {
+    "solidity-coverage": "^0.6.7"
   }
 }

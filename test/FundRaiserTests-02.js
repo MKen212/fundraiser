@@ -11,7 +11,7 @@ const FundRaiser = artifacts.require("FundRaiser");
 contract("02 - Contributions", async(accounts) => {
 
   it("Standard Single Contribution", async() => {
-    let instance = await FundRaiser.new("100", "10000", "1000");
+    let instance = await FundRaiser.new("100", "10", "10000", "1000");
     let bob = accounts[1];
 
     let contribution = await instance.contribute({from: bob, value: 1000});
@@ -31,7 +31,7 @@ contract("02 - Contributions", async(accounts) => {
   });
 
   it("Multiple Contributions from same account", async() => {
-    let instance = await FundRaiser.new("100", "10000", "1000");
+    let instance = await FundRaiser.new("100", "10", "10000", "1000");
     let bob = accounts[1];
 
     let contribution01 = await instance.contribute({from: bob, value: 1000});
@@ -54,7 +54,7 @@ contract("02 - Contributions", async(accounts) => {
   });
 
   it("Multiple Contributions from multiple accounts passed goal", async() => {
-    let instance = await FundRaiser.new("100", "10000", "1000");
+    let instance = await FundRaiser.new("100", "10", "10000", "1000");
     let bob = accounts[1];
     let peter = accounts[2];
 
@@ -81,7 +81,7 @@ contract("02 - Contributions", async(accounts) => {
   });
 
   it("Contribution below minimum level should fail", async() => {
-    let instance = await FundRaiser.new("100", "10000", "1000");
+    let instance = await FundRaiser.new("100", "10", "10000", "1000");
     let bob = accounts[1];
 
     try {
@@ -93,7 +93,7 @@ contract("02 - Contributions", async(accounts) => {
   });
 
   it("Contribution after deadline should fail", async() => {
-    let instance = await FundRaiser.new("2", "10000", "1000");
+    let instance = await FundRaiser.new("2", "10", "10000", "1000");
     let bob = accounts[1];
 
     let contribution01 = await instance.contribute({from: bob, value: 1000});

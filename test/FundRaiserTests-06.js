@@ -12,7 +12,7 @@ const BN = web3.utils.BN;
 contract("06 - Payment Release", async(accounts) => {
 
   it("Standard Payment Release", async() => {
-    let instance = await FundRaiser.new("100", "10000", "1000");
+    let instance = await FundRaiser.new("100", "10", "10000", "1000");
     let alice = accounts[0];
     let bob = accounts[1];
     let peter = accounts[2];
@@ -37,12 +37,15 @@ contract("06 - Payment Release", async(accounts) => {
     let peterBalanceAfter = new BN(await web3.eth.getBalance(peter));
     assert.equal(peterBalanceAfter.sub(peterBalanceBefore).toString(10), 10000);
 
+    let amountPaidOut = await instance.amountPaidOut();
+    assert.equal(amountPaidOut, 10000);
+
     let requestDetails = await instance.requests(0);
     assert.equal(requestDetails.completed, true);
   });
 
   it("Multiple Payment Releases", async() => {
-    let instance = await FundRaiser.new("100", "10000", "1000");
+    let instance = await FundRaiser.new("100", "10", "10000", "1000");
     let alice = accounts[0];
     let bob = accounts[1];
     let peter = accounts[2];
@@ -70,11 +73,17 @@ contract("06 - Payment Release", async(accounts) => {
     let contractBalance = await web3.eth.getBalance(instance.address);
     assert.equal(contractBalance, 5000);
 
+    let amountPaidOut = await instance.amountPaidOut();
+    assert.equal(amountPaidOut, 5000);
+
     let paymentRelease02 = await instance.releasePayment(1, {from: alice});
     assert.equal(paymentRelease02.logs[0].event, "PaymentReleased");
 
     contractBalance = await web3.eth.getBalance(instance.address);
     assert.equal(contractBalance, 1000);
+
+    amountPaidOut = await instance.amountPaidOut();
+    assert.equal(amountPaidOut, 9000);
 
     let peterBalanceAfter = new BN(await web3.eth.getBalance(peter));
     assert.equal(peterBalanceAfter.sub(peterBalanceBefore).toString(10), 9000);
@@ -87,7 +96,7 @@ contract("06 - Payment Release", async(accounts) => {
   });
 
   it ("Payment Release from non-owner should fail", async() => {
-    let instance = await FundRaiser.new("100", "10000", "1000");
+    let instance = await FundRaiser.new("100", "10", "10000", "1000");
     let alice = accounts[0];
     let bob = accounts[1];
     let peter = accounts[2];
@@ -117,7 +126,7 @@ contract("06 - Payment Release", async(accounts) => {
    */  
 
   it ("Payment Release for non-existent request should fail", async() => {
-    let instance = await FundRaiser.new("100", "10000", "1000");
+    let instance = await FundRaiser.new("100", "10", "10000", "1000");
     let alice = accounts[0];
     let bob = accounts[1];
     let peter = accounts[2];
@@ -140,7 +149,7 @@ contract("06 - Payment Release", async(accounts) => {
   });
 
   it ("Payment Release for completed request should fail", async() => {
-    let instance = await FundRaiser.new("100", "10000", "1000");
+    let instance = await FundRaiser.new("100", "10", "10000", "1000");
     let alice = accounts[0];
     let bob = accounts[1];
     let peter = accounts[2];
@@ -166,7 +175,7 @@ contract("06 - Payment Release", async(accounts) => {
   });
 
   it ("Payment Release for request without majority vote should fail", async() => {
-    let instance = await FundRaiser.new("100", "10000", "1000");
+    let instance = await FundRaiser.new("100", "10", "10000", "1000");
     let alice = accounts[0];
     let bob = accounts[1];
     let peter = accounts[2];
@@ -192,7 +201,7 @@ contract("06 - Payment Release", async(accounts) => {
   });
 
   it ("Payment Release above amount available should fail", async() => {
-    let instance = await FundRaiser.new("100", "10000", "1000");
+    let instance = await FundRaiser.new("100", "10", "10000", "1000");
     let alice = accounts[0];
     let bob = accounts[1];
     let peter = accounts[2];

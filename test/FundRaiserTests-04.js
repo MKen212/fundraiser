@@ -11,7 +11,7 @@ const FundRaiser = artifacts.require("FundRaiser");
 contract("04 - Spending Requests", async(accounts) => {
 
   it("Standard Single Spending Request", async() => {
-    let instance = await FundRaiser.new("100", "10000", "1000");
+    let instance = await FundRaiser.new("100", "10", "10000", "1000");
     let alice = accounts[0];
     let bob = accounts[1];
 
@@ -27,10 +27,13 @@ contract("04 - Spending Requests", async(accounts) => {
     assert.equal(requestDetails.recipient, alice);
     assert.equal(requestDetails.completed, false);
     assert.equal(requestDetails.numberOfVoters, 0);
+
+    let totalRequests = await instance.totalRequests();
+    assert.equal(totalRequests, 1);
   });
 
   it("Multiple Spending Requests", async() => {
-    let instance = await FundRaiser.new("100", "10000", "1000");
+    let instance = await FundRaiser.new("100", "10", "10000", "1000");
     let alice = accounts[0];
     let bob = accounts[1];
 
@@ -47,6 +50,9 @@ contract("04 - Spending Requests", async(accounts) => {
     assert.equal(requestDetails01.completed, false);
     assert.equal(requestDetails01.numberOfVoters, 0);
 
+    let totalRequests = await instance.totalRequests();
+    assert.equal(totalRequests, 1);
+
     let request02 = await instance.createRequest("Request 02", "4000", alice, {from: alice});
     assert.equal(request02.logs[0].event, "RequestCreated");
 
@@ -56,10 +62,13 @@ contract("04 - Spending Requests", async(accounts) => {
     assert.equal(requestDetails02.recipient, alice);
     assert.equal(requestDetails02.completed, false);
     assert.equal(requestDetails02.numberOfVoters, 0);
+
+    totalRequests = await instance.totalRequests();
+    assert.equal(totalRequests, 2);
   });
 
   it("Spending Request to different recipient", async() => {
-    let instance = await FundRaiser.new("100", "10000", "1000");
+    let instance = await FundRaiser.new("100", "10", "10000", "1000");
     let alice = accounts[0];
     let bob = accounts[1];
     let peter = accounts[2];
@@ -76,10 +85,29 @@ contract("04 - Spending Requests", async(accounts) => {
     assert.equal(requestDetails.recipient, peter);
     assert.equal(requestDetails.completed, false);
     assert.equal(requestDetails.numberOfVoters, 0);
+
+    let totalRequests = await instance.totalRequests();
+    assert.equal(totalRequests, 1);
   });
 
+  it ("Spending Request from non-owner should fail", async() => {
+    let instance = await FundRaiser.new("100", "10", "10000", "1000");
+    let alice = accounts[0];
+    let bob = accounts[1];
+
+    let contribution = await instance.contribute({from: bob, value: 10000});
+    assert.equal(contribution.logs[0].event, "Contribution");
+
+    try {
+      await instance.createRequest("Request 01", "10000", alice, {from: bob});
+      assert.fail("Spending Request from non-owner not allowed. Request creation should fail");
+    } catch (err) {
+      assert(err.toString().includes("Caller is not the contract owner"), "Message: " + err);
+    }
+  });
+  
   it ("Spending Request of zero value should fail", async() => {
-    let instance = await FundRaiser.new("100", "10000", "1000");
+    let instance = await FundRaiser.new("100", "10", "10000", "1000");
     let alice = accounts[0];
     let bob = accounts[1];
 
@@ -94,24 +122,8 @@ contract("04 - Spending Requests", async(accounts) => {
     }
   });
 
-  it ("Spending Request from non-owner should fail", async() => {
-    let instance = await FundRaiser.new("100", "10000", "1000");
-    let alice = accounts[0];
-    let bob = accounts[1];
-
-    let contribution = await instance.contribute({from: bob, value: 10000});
-    assert.equal(contribution.logs[0].event, "Contribution");
-
-    try {
-      await instance.createRequest("Request 01", "10000", alice, {from: bob});
-      assert.fail("Spending Request from non-owner not allowed. Request creation should fail");
-    } catch (err) {
-      assert(err.toString().includes("Caller is not the contract owner"), "Message: " + err);
-    }
-  });
-
   it ("Spending Request before goal reached should fail", async() => {
-    let instance = await FundRaiser.new("100", "10000", "1000");
+    let instance = await FundRaiser.new("100", "10", "10000", "1000");
     let alice = accounts[0];
     let bob = accounts[1];
 
@@ -126,24 +138,16 @@ contract("04 - Spending Requests", async(accounts) => {
     }
   });
 
-  it ("Spending Request value above amount raised should fail", async() => {
-    let instance = await FundRaiser.new("100", "10000", "1000");
-    let alice = accounts[0];
-    let bob = accounts[1];
-
-    let contribution = await instance.contribute({from: bob, value: 10000});
-    assert.equal(contribution.logs[0].event, "Contribution");
-
-    try {
-      await instance.createRequest("Request 01", "11000", alice, {from: alice});
-      assert.fail("Spending Request above amount raised not allowed. Request creation should fail");
-    } catch (err) {
-      assert(err.toString().includes("Spending request value greater than amount raised"), "Message: " + err);
-    }
-  });
+  // it ("Spending Request value above amount raised should fail", async() => {
+  /**
+   * Technically there should be a test to ensure the Spending Request value cannot be above
+   * the amount raised. However, as you cannot create a spending request above the total
+   * amount available (see next test) then total raised would never be greater than total
+   * available, so this situation would never be reached
+   */
 
   it ("Spending Request value above amount available should fail", async() => {
-    let instance = await FundRaiser.new("100", "10000", "1000");
+    let instance = await FundRaiser.new("100", "10", "10000", "1000");
     let alice = accounts[0];
     let bob = accounts[1];
 
@@ -168,7 +172,7 @@ contract("04 - Spending Requests", async(accounts) => {
   });
 
   it ("Spending Request recipient of address zero should fail", async() => {
-    let instance = await FundRaiser.new("100", "10000", "1000");
+    let instance = await FundRaiser.new("100", "10", "10000", "1000");
     let alice = accounts[0];
     let bob = accounts[1];
 

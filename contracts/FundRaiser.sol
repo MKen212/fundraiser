@@ -2,11 +2,11 @@ pragma solidity ^0.5.0;
 
 /**
  * @title FundRaiser Smart Contract
- * @dev Contract used to raise funds and distribute based on contributors voting
+ * @dev Contract used to raise funds and release payments based on contributors voting
  */
 contract FundRaiser {
   using SafeMath for uint256;
-  // Initial set-up of Struct for Spending Request
+  // Initial set-up of Struct for Spending Requests
   struct Request {
     string description;
     uint256 value;
@@ -20,8 +20,10 @@ contract FundRaiser {
   uint256 public totalContributors;  // Total number of contributors
   uint256 public minimumContribution;  // Minimum contribution value
   uint256 public deadline;  // Deadline Block Number for fundraising campaign
+  uint256 public initialPaymentDeadline; // Deadline Block Number for initial payment release to be approved and processed
   uint256 public goal;  // Total amount needing to be raised
   uint256 public amountRaised;  // Total amount actually raised
+  uint256 public amountPaidOut;  // Total amount actually paid out
   address public owner;  // Project Owner
 
   Request[] public requests;
@@ -35,25 +37,20 @@ contract FundRaiser {
   event PaymentReleased(address indexed from, uint256 requestId, uint256 value, address recipient);
   event OwnerChanged(address indexed from, address to);
 
-  constructor(uint256 _duration, uint256 _goal, uint256 _minimumContribution) public {
+  constructor(uint256 _duration, uint256 _initialPaymentDuration, uint256 _goal, uint256 _minimumContribution) public {
     deadline = block.number + _duration;
+    initialPaymentDeadline = block.number + _duration + _initialPaymentDuration;
     goal = _goal;
     minimumContribution = _minimumContribution;
     owner = msg.sender;
   }
 
 /**
-   * @dev Function Modifiers to restrict:
+   * @dev Function Modifiers to restrict usage as follows:
    * @dev - onlyOwner - Can only be processed by the contract owner
-   * @dev - goalReached - Can only be processed if the contract goal is reached
    */
   modifier onlyOwner {
     require(msg.sender == owner, "Caller is not the contract owner");
-    _;
-  }
-
-  modifier goalReached {
-    require(amountRaised >= goal, "Goal is not yet reached");
     _;
   }
 
@@ -95,13 +92,16 @@ contract FundRaiser {
 
   /**
    * @dev Process a Refund
-   * @dev Require that deadline has passed, goal was not reached and contribution exists
+   * @dev Require that contribution exists and deadline has passed
+   * @dev If goal is reached Require that NO payments have been made AND initialPaymentDeadline has passed
    */
   function getRefund() public returns (bool) {
-    require(block.number > deadline, "Deadline not yet reached");
-    require(amountRaised < goal, "Goal already reached");
     require(contributions[msg.sender] > 0, "No contribution to return");
-
+    require(block.number > deadline, "Deadline not yet reached");
+    if (amountRaised >= goal) {
+      require(amountPaidOut == 0, "Payments have already been made");
+      require(block.number > initialPaymentDeadline, "Initial Payment Deadline not yet reached");
+    }
     msg.sender.transfer(contributions[msg.sender]);
     emit Refund(msg.sender, contributions[msg.sender]);
     contributions[msg.sender] = 0;
@@ -112,9 +112,9 @@ contract FundRaiser {
    * @dev Create a spending request
    * @dev Require that value does not exceed total amount raised
    */
-  function createRequest(string memory _description, uint256 _value, address payable _recipient) public onlyOwner goalReached returns (bool) {
+  function createRequest(string memory _description, uint256 _value, address payable _recipient) public onlyOwner returns (bool) {
     require(_value > 0, "Spending request value cannot be zero");
-    require(_value <= amountRaised, "Spending request value greater than amount raised");
+    require(amountRaised >= goal, "Goal is not yet reached");
     require(_value <= address(this).balance, "Spending request value greater than amount available");
     require(_recipient != address(0), "Invalid Recipient of address zero");
 
@@ -131,11 +131,18 @@ contract FundRaiser {
   }
 
   /**
+   * @dev Display Total Number of spending requests
+   */
+  function totalRequests() public view returns (uint256) {
+    return requests.length;
+  }
+
+  /**
    * @dev Vote for a spending request
    * @dev Require that the request exists and is not completed, and that
    * @dev the caller made a contribution and has not already voted
    */
-  function voteForRequest(uint256 _index) public goalReached returns (bool) {
+  function voteForRequest(uint256 _index) public returns (bool) {
     require(requests.length > _index, "Spending request does not exist");
 
     Request storage thisRequest = requests[_index];
@@ -166,7 +173,7 @@ contract FundRaiser {
    * @dev over a majority of contributors voted for the request, and that
    * @dev there are funds available to make the payment
    */
-  function releasePayment(uint256 _index) public onlyOwner goalReached returns (bool) {
+  function releasePayment(uint256 _index) public onlyOwner returns (bool) {
     require(requests.length > _index, "Spending request does not exist");
 
     Request storage thisRequest = requests[_index];
@@ -177,6 +184,7 @@ contract FundRaiser {
 
     thisRequest.recipient.transfer(thisRequest.value);
     emit PaymentReleased(msg.sender, _index, thisRequest.value, thisRequest.recipient);
+    amountPaidOut = amountPaidOut.add(thisRequest.value);
     thisRequest.completed = true;
     return true;
   }
@@ -186,7 +194,7 @@ contract FundRaiser {
    * @dev These functions are ONLY required to expose the SafeMath internal Library 
    * @dev functions for testing. These can be removed after testing if required
    */
-  /* 
+  /*
   function testAdd(uint256 a, uint256 b) public pure returns (uint256) {
     return SafeMath.add(a, b);
   }
