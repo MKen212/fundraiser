@@ -1,4 +1,4 @@
-pragma solidity ^0.5.0;
+pragma solidity 0.5.16;
 
 /**
  * @title FundRaiser Smart Contract
@@ -56,16 +56,19 @@ contract FundRaiser {
 
   /**
    * @dev Fallback Function not allowed
+   * @dev Removed as contracts without a fallback function now automatically revert payments
    */
+  /*
   function() external {
     revert("Fallback method not allowed");
   }
+  */
 
   /**
    * @dev Change the owner of the contract
    * @dev Can only be actioned by the existing owner
    */
-  function changeOwner(address _newOwner) public onlyOwner returns (bool) {
+  function changeOwner(address _newOwner) external onlyOwner returns (bool) {
     require(_newOwner != address(0), "Invalid Owner change to address zero");
     owner = _newOwner;
     emit OwnerChanged(msg.sender, _newOwner);
@@ -76,7 +79,7 @@ contract FundRaiser {
    * @dev Process a Contribution
    * @dev Require that minimum contribution value is met and deadline is not passed
    */
-  function contribute() public payable returns (bool) {
+  function contribute() external payable returns (bool) {
     require(msg.value >= minimumContribution, "Minimum Contribution level not met");
     require(block.number <= deadline, "Deadline is passed");
 
@@ -95,16 +98,17 @@ contract FundRaiser {
    * @dev Require that contribution exists and deadline has passed
    * @dev If goal is reached Require that NO payments have been made AND initialPaymentDeadline has passed
    */
-  function getRefund() public returns (bool) {
+  function getRefund() external returns (bool) {
     require(contributions[msg.sender] > 0, "No contribution to return");
     require(block.number > deadline, "Deadline not yet reached");
     if (amountRaised >= goal) {
       require(amountPaidOut == 0, "Payments have already been made");
       require(block.number > initialPaymentDeadline, "Initial Payment Deadline not yet reached");
     }
-    msg.sender.transfer(contributions[msg.sender]);
-    emit Refund(msg.sender, contributions[msg.sender]);
+    uint256 amountToRefund = contributions[msg.sender];
     contributions[msg.sender] = 0;
+    msg.sender.transfer(amountToRefund);
+    emit Refund(msg.sender, contributions[msg.sender]);
     return true;
   }
 
@@ -112,7 +116,7 @@ contract FundRaiser {
    * @dev Create a spending request
    * @dev Require that value does not exceed total amount raised
    */
-  function createRequest(string memory _description, uint256 _value, address payable _recipient) public onlyOwner returns (bool) {
+  function createRequest(string calldata _description, uint256 _value, address payable _recipient) external onlyOwner returns (bool) {
     require(_value > 0, "Spending request value cannot be zero");
     require(amountRaised >= goal, "Goal is not yet reached");
     require(_value <= address(this).balance, "Spending request value greater than amount available");
@@ -133,7 +137,7 @@ contract FundRaiser {
   /**
    * @dev Display Total Number of spending requests
    */
-  function totalRequests() public view returns (uint256) {
+  function totalRequests() external view returns (uint256) {
     return requests.length;
   }
 
@@ -142,7 +146,7 @@ contract FundRaiser {
    * @dev Require that the request exists and is not completed, and that
    * @dev the caller made a contribution and has not already voted
    */
-  function voteForRequest(uint256 _index) public returns (bool) {
+  function voteForRequest(uint256 _index) external returns (bool) {
     require(requests.length > _index, "Spending request does not exist");
 
     Request storage thisRequest = requests[_index];
@@ -161,7 +165,7 @@ contract FundRaiser {
    * @dev View if account has voted for spending request
    * @dev Require that the request exists
    */
-  function hasVoted(uint256 _index, address _account) public view returns (bool) {
+  function hasVoted(uint256 _index, address _account) external view returns (bool) {
     require(requests.length > _index, "Spending request does not exist");
     Request storage thisRequest = requests[_index];
     return thisRequest.voters[_account];
@@ -173,7 +177,7 @@ contract FundRaiser {
    * @dev over a majority of contributors voted for the request, and that
    * @dev there are funds available to make the payment
    */
-  function releasePayment(uint256 _index) public onlyOwner returns (bool) {
+  function releasePayment(uint256 _index) external onlyOwner returns (bool) {
     require(requests.length > _index, "Spending request does not exist");
 
     Request storage thisRequest = requests[_index];
@@ -182,10 +186,10 @@ contract FundRaiser {
     require(thisRequest.numberOfVoters > totalContributors / 2, "Less than a majority voted");
     require(thisRequest.value <= address(this).balance, "Spending request value greater than amount available");
 
-    thisRequest.recipient.transfer(thisRequest.value);
-    emit PaymentReleased(msg.sender, _index, thisRequest.value, thisRequest.recipient);
     amountPaidOut = amountPaidOut.add(thisRequest.value);
     thisRequest.completed = true;
+    thisRequest.recipient.transfer(thisRequest.value);
+    emit PaymentReleased(msg.sender, _index, thisRequest.value, thisRequest.recipient);
     return true;
   }
 
@@ -195,11 +199,11 @@ contract FundRaiser {
    * @dev functions for testing. These can be removed after testing if required
    */
   /*
-  function testAdd(uint256 a, uint256 b) public pure returns (uint256) {
+  function testAdd(uint256 a, uint256 b) external pure returns (uint256) {
     return SafeMath.add(a, b);
   }
 
-  function testSub(uint256 a, uint256 b) public pure returns (uint256) {
+  function testSub(uint256 a, uint256 b) external pure returns (uint256) {
     return SafeMath.sub(a, b);
   }
   */

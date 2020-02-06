@@ -47,14 +47,14 @@ contract("01 - Contract Set-up and Admin functions", async(accounts) => {
     assert.equal(owner, accounts[0]);
   });
 
-  it("Contract does not allow fallback", async() => {
+  it("Contract does not allow ether fallback", async() => {
     let instance = await FundRaiser.new("100", "10", "10000000000000000000", "1000000000000000000");
 
     try {
       await instance.sendTransaction("123");
-      assert.fail("Contract does not allow Fallback. Transaction should fail!");
+      assert.fail("Contract does not allow Ether Fallback. Transaction should fail!");
     } catch (err) {
-      assert(err.toString().includes("Fallback method not allowed"), "Message: " + err);
+      assert(err.toString().includes("revert"), "Message: " + err);
     }
   });
 
@@ -89,5 +89,5 @@ contract("01 - Contract Set-up and Admin functions", async(accounts) => {
       assert(err.toString().includes("Invalid Owner change to address zero"), "Message: " + err);
     }
   });
-  
+
 });
