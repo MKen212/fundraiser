@@ -53,22 +53,22 @@ contract("06 - Payment Release", async(accounts) => {
     let contribution = await instance.contribute({from: bob, value: 10000});
     assert.equal(contribution.logs[0].event, "Contribution");
 
-    let request01 = await instance.createRequest("Request 01", "5000", peter, {from: alice});
-    assert.equal(request01.logs[0].event, "RequestCreated");
+    let request0 = await instance.createRequest("Request 0", "5000", peter, {from: alice});
+    assert.equal(request0.logs[0].event, "RequestCreated");
 
-    let request02 = await instance.createRequest("Request 02", "4000", peter, {from: alice});
-    assert.equal(request02.logs[0].event, "RequestCreated");
+    let request1 = await instance.createRequest("Request 1", "4000", peter, {from: alice});
+    assert.equal(request1.logs[0].event, "RequestCreated");
 
-    let vote01 = await instance.voteForRequest(0, {from: bob});
-    assert.equal(vote01.logs[0].event, "Vote");
+    let vote0 = await instance.voteForRequest(0, {from: bob});
+    assert.equal(vote0.logs[0].event, "Vote");
 
-    let vote02 = await instance.voteForRequest(1, {from: bob});
-    assert.equal(vote02.logs[0].event, "Vote");
+    let vote1 = await instance.voteForRequest(1, {from: bob});
+    assert.equal(vote1.logs[0].event, "Vote");
     
     let peterBalanceBefore = new BN(await web3.eth.getBalance(peter));
 
-    let paymentRelease01 = await instance.releasePayment(0, {from: alice});
-    assert.equal(paymentRelease01.logs[0].event, "PaymentReleased");
+    let paymentRelease0 = await instance.releasePayment(0, {from: alice});
+    assert.equal(paymentRelease0.logs[0].event, "PaymentReleased");
 
     let contractBalance = await web3.eth.getBalance(instance.address);
     assert.equal(contractBalance, 5000);
@@ -76,8 +76,8 @@ contract("06 - Payment Release", async(accounts) => {
     let amountPaidOut = await instance.amountPaidOut();
     assert.equal(amountPaidOut, 5000);
 
-    let paymentRelease02 = await instance.releasePayment(1, {from: alice});
-    assert.equal(paymentRelease02.logs[0].event, "PaymentReleased");
+    let paymentRelease1 = await instance.releasePayment(1, {from: alice});
+    assert.equal(paymentRelease1.logs[0].event, "PaymentReleased");
 
     contractBalance = await web3.eth.getBalance(instance.address);
     assert.equal(contractBalance, 1000);
@@ -88,11 +88,11 @@ contract("06 - Payment Release", async(accounts) => {
     let peterBalanceAfter = new BN(await web3.eth.getBalance(peter));
     assert.equal(peterBalanceAfter.sub(peterBalanceBefore).toString(10), 9000);
 
-    let requestDetails01 = await instance.requests(0);
-    assert.equal(requestDetails01.completed, true);
+    let requestDetails0 = await instance.requests(0);
+    assert.equal(requestDetails0.completed, true);
 
-    let requestDetails02 = await instance.requests(0);
-    assert.equal(requestDetails02.completed, true);
+    let requestDetails1 = await instance.requests(0);
+    assert.equal(requestDetails1.completed, true);
   });
 
   it ("Payment Release from non-owner should fail", async() => {
@@ -104,7 +104,7 @@ contract("06 - Payment Release", async(accounts) => {
     let contribution = await instance.contribute({from: bob, value: 10000});
     assert.equal(contribution.logs[0].event, "Contribution");
 
-    let request = await instance.createRequest("Request 01", "10000", peter, {from: alice});
+    let request = await instance.createRequest("Request 0", "10000", peter, {from: alice});
     assert.equal(request.logs[0].event, "RequestCreated");
 
     let vote = await instance.voteForRequest(0, {from: bob});
@@ -134,7 +134,7 @@ contract("06 - Payment Release", async(accounts) => {
     let contribution = await instance.contribute({from: bob, value: 10000});
     assert.equal(contribution.logs[0].event, "Contribution");
 
-    let request = await instance.createRequest("Request 01", "10000", peter, {from: alice});
+    let request = await instance.createRequest("Request 0", "10000", peter, {from: alice});
     assert.equal(request.logs[0].event, "RequestCreated");
 
     let vote = await instance.voteForRequest(0, {from: bob});
@@ -157,7 +157,7 @@ contract("06 - Payment Release", async(accounts) => {
     let contribution = await instance.contribute({from: bob, value: 10000});
     assert.equal(contribution.logs[0].event, "Contribution");
 
-    let request = await instance.createRequest("Request 01", "10000", peter, {from: alice});
+    let request = await instance.createRequest("Request 0", "10000", peter, {from: alice});
     assert.equal(request.logs[0].event, "RequestCreated");
 
     let vote = await instance.voteForRequest(0, {from: bob});
@@ -186,7 +186,7 @@ contract("06 - Payment Release", async(accounts) => {
     let contributionPeter = await instance.contribute({from: peter, value: 5000});
     assert.equal(contributionPeter.logs[0].event, "Contribution");
 
-    let request = await instance.createRequest("Request 01", "10000", alice, {from: alice});
+    let request = await instance.createRequest("Request 0", "10000", alice, {from: alice});
     assert.equal(request.logs[0].event, "RequestCreated");
 
     let vote = await instance.voteForRequest(0, {from: bob});
@@ -209,20 +209,20 @@ contract("06 - Payment Release", async(accounts) => {
     let contribution = await instance.contribute({from: bob, value: 10000});
     assert.equal(contribution.logs[0].event, "Contribution");
 
-    let request01 = await instance.createRequest("Request 01", "8000", peter, {from: alice});
-    assert.equal(request01.logs[0].event, "RequestCreated");
+    let request0 = await instance.createRequest("Request 0", "8000", peter, {from: alice});
+    assert.equal(request0.logs[0].event, "RequestCreated");
 
-    let request02 = await instance.createRequest("Request 02", "4000", peter, {from: alice});
-    assert.equal(request02.logs[0].event, "RequestCreated");
+    let request1 = await instance.createRequest("Request 1", "4000", peter, {from: alice});
+    assert.equal(request1.logs[0].event, "RequestCreated");
 
-    let vote01 = await instance.voteForRequest(0, {from: bob});
-    assert.equal(vote01.logs[0].event, "Vote");
+    let vote0 = await instance.voteForRequest(0, {from: bob});
+    assert.equal(vote0.logs[0].event, "Vote");
 
-    let vote02 = await instance.voteForRequest(1, {from: bob});
-    assert.equal(vote02.logs[0].event, "Vote");
+    let vote1 = await instance.voteForRequest(1, {from: bob});
+    assert.equal(vote1.logs[0].event, "Vote");
 
-    let paymentRelease01 = await instance.releasePayment(0, {from: alice});
-    assert.equal(paymentRelease01.logs[0].event, "PaymentReleased");
+    let paymentRelease0 = await instance.releasePayment(0, {from: alice});
+    assert.equal(paymentRelease0.logs[0].event, "PaymentReleased");
 
     try {
       await instance.releasePayment(1, {from: alice});

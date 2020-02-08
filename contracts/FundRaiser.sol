@@ -100,15 +100,24 @@ contract FundRaiser {
    */
   function getRefund() external returns (bool) {
     require(contributions[msg.sender] > 0, "No contribution to return");
-    require(block.number > deadline, "Deadline not yet reached");
+    require(block.number > deadline, "Deadline not reached");
+    require(amountPaidOut == 0, "Payments have already been made");
     if (amountRaised >= goal) {
-      require(amountPaidOut == 0, "Payments have already been made");
-      require(block.number > initialPaymentDeadline, "Initial Payment Deadline not yet reached");
+      require(block.number > initialPaymentDeadline, "Initial Payment Deadline not reached");
     }
     uint256 amountToRefund = contributions[msg.sender];
     contributions[msg.sender] = 0;
+    totalContributors = totalContributors.sub(1);
+    // amountRaised = amountRaised.sub(amountToRefund); // Removed to allow createRequest to still work if fundRaiser passed goal but then had refunds
+    for (uint x = 0; x < requests.length; x++) {
+      Request storage thisRequest = requests[x];
+      if (thisRequest.voters[msg.sender] == true) {
+        thisRequest.voters[msg.sender] = false;
+        thisRequest.numberOfVoters = thisRequest.numberOfVoters.sub(1);
+      }
+    }
     msg.sender.transfer(amountToRefund);
-    emit Refund(msg.sender, contributions[msg.sender]);
+    emit Refund(msg.sender, amountToRefund);
     return true;
   }
 
@@ -118,7 +127,7 @@ contract FundRaiser {
    */
   function createRequest(string calldata _description, uint256 _value, address payable _recipient) external onlyOwner returns (bool) {
     require(_value > 0, "Spending request value cannot be zero");
-    require(amountRaised >= goal, "Goal is not yet reached");
+    require(amountRaised >= goal, "Amount Raised is less than Goal");
     require(_value <= address(this).balance, "Spending request value greater than amount available");
     require(_recipient != address(0), "Invalid Recipient of address zero");
 
@@ -198,7 +207,7 @@ contract FundRaiser {
    * @dev These functions are ONLY required to expose the SafeMath internal Library 
    * @dev functions for testing. These can be removed after testing if required
    */
-  /*
+  
   function testAdd(uint256 a, uint256 b) external pure returns (uint256) {
     return SafeMath.add(a, b);
   }
@@ -206,7 +215,7 @@ contract FundRaiser {
   function testSub(uint256 a, uint256 b) external pure returns (uint256) {
     return SafeMath.sub(a, b);
   }
-  */
+  
 }
 
 /**

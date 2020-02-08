@@ -18,7 +18,7 @@ contract("05 - Voting", async(accounts) => {
     let contribution = await instance.contribute({from: bob, value: 10000});
     assert.equal(contribution.logs[0].event, "Contribution");
 
-    let request = await instance.createRequest("Request 01", "10000", alice, {from: alice});
+    let request = await instance.createRequest("Request 0", "10000", alice, {from: alice});
     assert.equal(request.logs[0].event, "RequestCreated");
 
     let vote = await instance.voteForRequest(0, {from: bob});
@@ -39,23 +39,23 @@ contract("05 - Voting", async(accounts) => {
     let contribution = await instance.contribute({from: bob, value: 10000});
     assert.equal(contribution.logs[0].event, "Contribution");
 
-    let request01 = await instance.createRequest("Request 01", "8000", alice, {from: alice});
-    assert.equal(request01.logs[0].event, "RequestCreated");
+    let request0 = await instance.createRequest("Request 0", "8000", alice, {from: alice});
+    assert.equal(request0.logs[0].event, "RequestCreated");
 
-    let request02 = await instance.createRequest("Request 02", "4000", alice, {from: alice});
-    assert.equal(request02.logs[0].event, "RequestCreated");
+    let request1 = await instance.createRequest("Request 1", "4000", alice, {from: alice});
+    assert.equal(request1.logs[0].event, "RequestCreated");
 
-    let vote01 = await instance.voteForRequest(0, {from: bob});
-    assert.equal(vote01.logs[0].event, "Vote");
+    let vote0 = await instance.voteForRequest(0, {from: bob});
+    assert.equal(vote0.logs[0].event, "Vote");
     
-    let hasVoted01 = await instance.hasVoted(0, bob);
-    assert.equal(hasVoted01, true);
+    let hasVoted0 = await instance.hasVoted(0, bob);
+    assert.equal(hasVoted0, true);
 
-    let vote02 = await instance.voteForRequest(1, {from: bob});
-    assert.equal(vote02.logs[0].event, "Vote");
+    let vote1 = await instance.voteForRequest(1, {from: bob});
+    assert.equal(vote1.logs[0].event, "Vote");
     
-    let hasVoted02 = await instance.hasVoted(0, bob);
-    assert.equal(hasVoted02, true);
+    let hasVoted1 = await instance.hasVoted(0, bob);
+    assert.equal(hasVoted1, true);
   });
 
   // it ("Vote before goal reached should fail", async() => {});
@@ -73,7 +73,7 @@ contract("05 - Voting", async(accounts) => {
     let contribution = await instance.contribute({from: bob, value: 10000});
     assert.equal(contribution.logs[0].event, "Contribution");
 
-    let request = await instance.createRequest("Request 01", "10000", alice, {from: alice});
+    let request = await instance.createRequest("Request 0", "10000", alice, {from: alice});
     assert.equal(request.logs[0].event, "RequestCreated");
 
     try {
@@ -92,7 +92,7 @@ contract("05 - Voting", async(accounts) => {
     let contribution = await instance.contribute({from: bob, value: 10000});
     assert.equal(contribution.logs[0].event, "Contribution");
 
-    let request = await instance.createRequest("Request 01", "10000", alice, {from: alice});
+    let request = await instance.createRequest("Request 0", "10000", alice, {from: alice});
     assert.equal(request.logs[0].event, "RequestCreated");
 
     let vote = await instance.voteForRequest(0, {from: bob});
@@ -118,7 +118,7 @@ contract("05 - Voting", async(accounts) => {
     let contribution = await instance.contribute({from: bob, value: 10000});
     assert.equal(contribution.logs[0].event, "Contribution");
 
-    let request = await instance.createRequest("Request 01", "10000", alice, {from: alice});
+    let request = await instance.createRequest("Request 0", "10000", alice, {from: alice});
     assert.equal(request.logs[0].event, "RequestCreated");
 
     try {
@@ -137,7 +137,7 @@ contract("05 - Voting", async(accounts) => {
     let contribution = await instance.contribute({from: bob, value: 10000});
     assert.equal(contribution.logs[0].event, "Contribution");
 
-    let request = await instance.createRequest("Request 01", "10000", alice, {from: alice});
+    let request = await instance.createRequest("Request 0", "10000", alice, {from: alice});
     assert.equal(request.logs[0].event, "RequestCreated");
 
     let vote = await instance.voteForRequest(0, {from: bob});
@@ -159,7 +159,7 @@ contract("05 - Voting", async(accounts) => {
     let contribution = await instance.contribute({from: bob, value: 10000});
     assert.equal(contribution.logs[0].event, "Contribution");
 
-    let request = await instance.createRequest("Request 01", "10000", alice, {from: alice});
+    let request = await instance.createRequest("Request 0", "10000", alice, {from: alice});
     assert.equal(request.logs[0].event, "RequestCreated");
 
     let hasVoted = await instance.hasVoted(0, bob);
@@ -174,7 +174,7 @@ contract("05 - Voting", async(accounts) => {
     let contribution = await instance.contribute({from: bob, value: 10000});
     assert.equal(contribution.logs[0].event, "Contribution");
 
-    let request = await instance.createRequest("Request 01", "10000", alice, {from: alice});
+    let request = await instance.createRequest("Request 0", "10000", alice, {from: alice});
     assert.equal(request.logs[0].event, "RequestCreated");
 
     try {
