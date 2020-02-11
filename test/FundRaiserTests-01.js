@@ -47,6 +47,13 @@ contract("01 - Contract Set-up and Admin functions", async(accounts) => {
     assert.equal(owner, accounts[0]);
   });
 
+  it("RequestCountMax set", async() => {
+    let instance = await FundRaiser.new("100", "10", "10000000000000000000", "1000000000000000000");
+
+    let requestCountMax = await instance.requestCountMax();
+    assert.equal(requestCountMax, 100);
+  });
+
   it("Contract does not allow ether fallback", async() => {
     let instance = await FundRaiser.new("100", "10", "10000000000000000000", "1000000000000000000");
 

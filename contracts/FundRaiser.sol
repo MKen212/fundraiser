@@ -17,14 +17,16 @@ contract FundRaiser {
   }
 
   // Initial storage variables
-  uint256 public totalContributors;  // Total number of contributors
-  uint256 public minimumContribution;  // Minimum contribution value
   uint256 public deadline;  // Deadline Block Number for fundraising campaign
   uint256 public initialPaymentDeadline; // Deadline Block Number for initial payment release to be approved and processed
   uint256 public goal;  // Total amount needing to be raised
+  uint256 public minimumContribution;  // Minimum contribution value
+  address public owner;  // Project Owner
+  uint256 public totalContributors;  // Total number of contributors
+  uint256 public totalRequests;  // Total number of spending requests
   uint256 public amountRaised;  // Total amount actually raised
   uint256 public amountPaidOut;  // Total amount actually paid out
-  address public owner;  // Project Owner
+  uint256 public requestCountMax = 100;  // Max Count of Spending Requests, required to stop refund/remove voting loop from getting out of gas. Recommend 100 and never > 1000
 
   Request[] public requests;
 
@@ -109,7 +111,7 @@ contract FundRaiser {
     contributions[msg.sender] = 0;
     totalContributors = totalContributors.sub(1);
     // amountRaised = amountRaised.sub(amountToRefund); // Removed to allow createRequest to still work if fundRaiser passed goal but then had refunds
-    for (uint x = 0; x < requests.length; x++) {
+    for (uint x = 0; (x < totalRequests && x < requestCountMax); x+=1) {
       Request storage thisRequest = requests[x];
       if (thisRequest.voters[msg.sender] == true) {
         thisRequest.voters[msg.sender] = false;
@@ -130,6 +132,7 @@ contract FundRaiser {
     require(amountRaised >= goal, "Amount Raised is less than Goal");
     require(_value <= address(this).balance, "Spending request value greater than amount available");
     require(_recipient != address(0), "Invalid Recipient of address zero");
+    require(totalRequests < requestCountMax, "Spending Request Count limit reached");
 
     Request memory newRequest = Request({
       description: _description,
@@ -139,15 +142,9 @@ contract FundRaiser {
       numberOfVoters: 0
     });
     requests.push(newRequest);
-    emit RequestCreated(msg.sender, requests.length.sub(1), _description, _value, _recipient);
+    totalRequests = totalRequests.add(1);
+    emit RequestCreated(msg.sender, totalRequests.sub(1), _description, _value, _recipient);
     return true;
-  }
-
-  /**
-   * @dev Display Total Number of spending requests
-   */
-  function totalRequests() external view returns (uint256) {
-    return requests.length;
   }
 
   /**
@@ -156,7 +153,7 @@ contract FundRaiser {
    * @dev the caller made a contribution and has not already voted
    */
   function voteForRequest(uint256 _index) external returns (bool) {
-    require(requests.length > _index, "Spending request does not exist");
+    require(totalRequests > _index, "Spending request does not exist");
 
     Request storage thisRequest = requests[_index];
     
@@ -175,7 +172,7 @@ contract FundRaiser {
    * @dev Require that the request exists
    */
   function hasVoted(uint256 _index, address _account) external view returns (bool) {
-    require(requests.length > _index, "Spending request does not exist");
+    require(totalRequests > _index, "Spending request does not exist");
     Request storage thisRequest = requests[_index];
     return thisRequest.voters[_account];
   }
@@ -187,7 +184,7 @@ contract FundRaiser {
    * @dev there are funds available to make the payment
    */
   function releasePayment(uint256 _index) external onlyOwner returns (bool) {
-    require(requests.length > _index, "Spending request does not exist");
+    require(totalRequests > _index, "Spending request does not exist");
 
     Request storage thisRequest = requests[_index];
 
@@ -203,11 +200,12 @@ contract FundRaiser {
   }
 
   /**
-   * @dev SafeMath Library Test Functions
+   * @dev Test Functions
    * @dev These functions are ONLY required to expose the SafeMath internal Library 
-   * @dev functions for testing. These can be removed after testing if required
+   * @dev functions and the changeRequestCountMax function for testing.
+   * @dev These can be commented or removed after testing
    */
-  
+  /*
   function testAdd(uint256 a, uint256 b) external pure returns (uint256) {
     return SafeMath.add(a, b);
   }
@@ -215,7 +213,17 @@ contract FundRaiser {
   function testSub(uint256 a, uint256 b) external pure returns (uint256) {
     return SafeMath.sub(a, b);
   }
-  
+
+  event RequestCountMaxChanged(uint256 value);
+
+  function changeRequestCountMax(uint256 _newRequestCountMax) external onlyOwner returns (bool) {
+    require(_newRequestCountMax > 0, "Request Count limit cannot be less than zero");
+    require(_newRequestCountMax >= totalRequests, "Request Count limit cannot be less than Total Current Requests");
+    requestCountMax = _newRequestCountMax;
+    emit RequestCountMaxChanged( _newRequestCountMax);
+    return true;
+  }
+  */
 }
 
 /**
@@ -238,5 +246,4 @@ library SafeMath {
     uint256 c = a - b;
     return c;
   }
-
 }
