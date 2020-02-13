@@ -2,7 +2,8 @@ pragma solidity 0.5.16;
 
 /**
  * @title FundRaiser Smart Contract
- * @dev Contract used to raise funds and release payments based on contributors voting
+ * @author Malarena SA - www.malarena.com
+ * @notice A Fund Raising Smart Contract used to raise funds, with payments then released based on contributors voting
  */
 contract FundRaiser {
   using SafeMath for uint256;
@@ -19,9 +20,9 @@ contract FundRaiser {
   // Initial storage variables
   uint256 public deadline;  // Deadline Block Number for fundraising campaign
   uint256 public initialPaymentDeadline; // Deadline Block Number for initial payment release to be approved and processed
-  uint256 public goal;  // Total amount needing to be raised
-  uint256 public minimumContribution;  // Minimum contribution value
-  address public owner;  // Project Owner
+  uint256 public goal;  // Total amount needing to be raised, in wei
+  uint256 public minimumContribution;  // Minimum contribution value, in wei
+  address public owner;  // Ethereum address of the Smart Contract owner
   uint256 public totalContributors;  // Total number of contributors
   uint256 public totalRequests;  // Total number of spending requests
   uint256 public amountRaised;  // Total amount actually raised
@@ -32,13 +33,21 @@ contract FundRaiser {
 
   mapping(address => uint256) public contributions;
 
-  event Contribution(address indexed from, uint256 value);
-  event Refund(address indexed to, uint256 value);
-  event RequestCreated(address indexed from, uint256 requestId, string description, uint256 value, address recipient);
-  event Vote(address indexed from, uint256 requestId);
-  event PaymentReleased(address indexed from, uint256 requestId, uint256 value, address recipient);
-  event OwnerChanged(address indexed from, address to);
+  event Contribution(address indexed from, uint256 value);  // Confirmation of Contribution processed
+  event Refund(address indexed to, uint256 value);  // Confirmation of Refund processed
+  event RequestCreated(address indexed from, uint256 requestId, string description, uint256 value, address recipient);  // Confirmation of Spending Request Created
+  event Vote(address indexed from, uint256 requestId);  // Confirmation of Vote processed
+  event PaymentReleased(address indexed from, uint256 requestId, uint256 value, address recipient);  // Confirmation of Spending Request Payment Released
+  event OwnerChanged(address indexed from, address to);  // Confirmation of Owner change processed
 
+  /**
+   * @notice Constructor Function used to deploy contract
+   * @dev During Deploy the Ethereum address used to deploy the Smart Contract is set as the "owner" and certain functions below can only be actioned by the owner
+   * @param _duration Duration of fund-raising part of Contract, in blocks
+   * @param _initialPaymentDuration Period after _duration for owner to start releasing payments, in blocks
+   * @param _goal Financial goal of the Smart Contract, in wei
+   * @param _minimumContribution Minimum amount required for each contribution, in wei
+   */
   constructor(uint256 _duration, uint256 _initialPaymentDuration, uint256 _goal, uint256 _minimumContribution) public {
     deadline = block.number + _duration;
     initialPaymentDeadline = block.number + _duration + _initialPaymentDuration;
@@ -47,9 +56,9 @@ contract FundRaiser {
     owner = msg.sender;
   }
 
-/**
-   * @dev Function Modifiers to restrict usage as follows:
-   * @dev - onlyOwner - Can only be processed by the contract owner
+  /**
+   * @notice OnlyOwner Function Modifier
+   * @dev Function Modifier used to restrict certain functions so that they can only be actioned by the contract owner
    */
   modifier onlyOwner {
     require(msg.sender == owner, "Caller is not the contract owner");
@@ -67,8 +76,9 @@ contract FundRaiser {
   */
 
   /**
-   * @dev Change the owner of the contract
-   * @dev Can only be actioned by the existing owner
+   * @notice Change the owner of the contract
+   * @dev Can only be actioned by the current owner. Requires that _newOwner is not address zero
+   * @param _newOwner Address of new contract owner
    */
   function changeOwner(address _newOwner) external onlyOwner returns (bool) {
     require(_newOwner != address(0), "Invalid Owner change to address zero");
@@ -78,8 +88,8 @@ contract FundRaiser {
   }
 
   /**
-   * @dev Process a Contribution
-   * @dev Require that minimum contribution value is met and deadline is not passed
+   * @notice Process a Contribution
+   * @dev Payable function that should be sent Ether. Requires that minimum contribution value is met and deadline is not passed
    */
   function contribute() external payable returns (bool) {
     require(msg.value >= minimumContribution, "Minimum Contribution level not met");
@@ -96,9 +106,8 @@ contract FundRaiser {
   }
 
   /**
-   * @dev Process a Refund
-   * @dev Require that contribution exists and deadline has passed
-   * @dev If goal is reached Require that NO payments have been made AND initialPaymentDeadline has passed
+   * @notice Process a Refund, including reversing any voting
+   * @dev Requires that the contribution exists, the deadline has passed and NO payments have been made. If the goal is reached then requires that initialPaymentDeadline has passed
    */
   function getRefund() external returns (bool) {
     require(contributions[msg.sender] > 0, "No contribution to return");
@@ -111,7 +120,7 @@ contract FundRaiser {
     contributions[msg.sender] = 0;
     totalContributors = totalContributors.sub(1);
     // amountRaised = amountRaised.sub(amountToRefund); // Removed to allow createRequest to still work if fundRaiser passed goal but then had refunds
-    for (uint x = 0; (x < totalRequests && x < requestCountMax); x+=1) {
+    for (uint x = 0; (x < totalRequests && x < requestCountMax); x++) {
       Request storage thisRequest = requests[x];
       if (thisRequest.voters[msg.sender] == true) {
         thisRequest.voters[msg.sender] = false;
@@ -124,8 +133,11 @@ contract FundRaiser {
   }
 
   /**
-   * @dev Create a spending request
-   * @dev Require that value does not exceed total amount raised
+   * @notice Create a spending request
+   * @dev  Can only be actioned by the owner. Requires that the goal has been reached and the _value is not zero and does not exceed amountRaised or balance available on the contract. Also requires that _recipient is not address zero and requestCountMax has not been reached. Each spending request is stored sequentially starting from record 0
+   * @param _description A description of what the money will be spent on
+   * @param _value The amount being spent with this spending request
+   * @param _recipient The Ethereum address of where the money will be sent
    */
   function createRequest(string calldata _description, uint256 _value, address payable _recipient) external onlyOwner returns (bool) {
     require(_value > 0, "Spending request value cannot be zero");
@@ -148,9 +160,9 @@ contract FundRaiser {
   }
 
   /**
-   * @dev Vote for a spending request
-   * @dev Require that the request exists and is not completed, and that
-   * @dev the caller made a contribution and has not already voted
+   * @notice Vote for a spending request
+   * @dev Requires that the caller made a contribution and has not already voted for the request. Also requires that the request exists and is not completed
+   * @param _index Index Number of Spending Request to vote for
    */
   function voteForRequest(uint256 _index) external returns (bool) {
     require(totalRequests > _index, "Spending request does not exist");
@@ -168,8 +180,10 @@ contract FundRaiser {
   }
 
   /**
-   * @dev View if account has voted for spending request
-   * @dev Require that the request exists
+   * @notice View if account has voted for spending request
+   * @dev Requires that the request exists
+   * @param _index Index Number of Spending Request to check
+   * @param _account Address of Account to check
    */
   function hasVoted(uint256 _index, address _account) external view returns (bool) {
     require(totalRequests > _index, "Spending request does not exist");
@@ -178,10 +192,9 @@ contract FundRaiser {
   }
 
   /**
-   * @dev Release the payment for a spending request
-   * @dev Require that the request exists and is not completed, and that
-   * @dev over a majority of contributors voted for the request, and that
-   * @dev there are funds available to make the payment
+   * @notice Release the payment for a spending request
+   * @dev Can only be actioned by the owner. Requires that the request exists and is not completed, and that there are funds available to make the payment. Also requires that over 50% of the contributors voted for the request
+   * @param _index Index Number of Spending Request to release payment
    */
   function releasePayment(uint256 _index) external onlyOwner returns (bool) {
     require(totalRequests > _index, "Spending request does not exist");
@@ -200,10 +213,8 @@ contract FundRaiser {
   }
 
   /**
-   * @dev Test Functions
-   * @dev These functions are ONLY required to expose the SafeMath internal Library 
-   * @dev functions and the changeRequestCountMax function for testing.
-   * @dev These can be commented or removed after testing
+   * @notice Test Functions
+   * @dev These functions are ONLY required to expose the SafeMath internal Library functions and the changeRequestCountMax function for testing. These can be commented or removed after testing
    */
   /*
   function testAdd(uint256 a, uint256 b) external pure returns (uint256) {
@@ -227,7 +238,7 @@ contract FundRaiser {
 }
 
 /**
- * @title SafeMath Library
+ * @notice SafeMath Library
  * @dev Based on OpenZeppelin/SafeMath Library
  * @dev Used to avoid Solidity Overflow Errors
  * @dev Only add and sub functions used in this contract - others removed
