@@ -2,15 +2,16 @@
   "name": "fundraiser",
   "version": "1.0.0",
   "description": "A Fund Raising dApp using Smart Contracts and voting to release payments",
-  "main": "index.js",
+  "main": "server.js",
   "directories": {
     "test": "test"
   },
   "scripts": {
+    "server": "node server.js",
     "build": "truffle compile",
     "test": "truffle test",
-    "coverage": "solidity-coverage",
-    "start": "node index.js"
+    "verify": "truffle run verify",
+    "coverage": "truffle run coverage"
   },
   "repository": {
     "type": "git",
@@ -26,6 +27,6 @@
     "express": "^4.17.1"
   },
   "devDependencies": {
-    "solidity-coverage": "^0.6.7"
+    "solidity-coverage": "^0.7.1"
   }
 }

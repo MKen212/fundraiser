@@ -12,5 +12,6 @@ const DEFAULTS = {
   etherscanAPIKey: "<Your_API_Key",  // Etherscan API Key
   maxDurationSeconds: (604800 * 26),  // Maximum Contract duration in seconds - set to 26 weeks
   maxIPDurationSeconds: (604800 * 13),  // Maximum Initial Payment period after deadline - set to 13 weeks
+  requestCountMax: 100,  // Maximum Count of Spending Requests - see FundRaiser.sol
   webHostingURL: "<Your_Website_Address>",  // Web Hosting URL used in email links
 };

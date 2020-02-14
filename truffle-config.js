@@ -25,6 +25,12 @@
 // const mnemonic = fs.readFileSync(".secret").toString().trim();
 
 module.exports = {
+
+  plugins: [
+    "truffle-security",
+    "solidity-coverage"
+  ],
+
   /**
    * Networks define how you connect to your ethereum client and let you set the
    * defaults web3 uses to send transactions. If you don't specify one truffle
@@ -46,13 +52,6 @@ module.exports = {
       host: "127.0.0.1",     // Localhost (default: none)
       port: 8545,            // Standard Ethereum port (default: none)
       network_id: "*",       // Any network (default: none)
-    },
-    coverage: {
-      host: "127.0.0.1",
-      network_id: "*",
-      port: 8555,         // <-- If you change this, also set the port option in .solcover.js.
-      gas: 0xfffffffffff, // <-- Use this high gas value
-      gasPrice: 0x01      // <-- Use this low gas price
     },
 
     // Another network with more advanced options...

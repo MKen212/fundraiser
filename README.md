@@ -1,62 +1,57 @@
-# fundraiser
-A Fund Raising Smart Contract with voting used to release payments.
+# ethfundraiser
 
-## Overview
-This Smart Contract provides the following functionality:
-- The Fund Raiser deploys the smart contract with a set duration, a financial goal and a minimum contribution amount
-- Contributors send Ether to this contract
-- Once the goal is reached, the Fund Raiser issues a Spending Request of a value up to the total amount contributed to identify what the contribution money will be spent on
-- Contributors vote for the Spending Request
-- If the Spending Request receives votes of over 50% of the total contributors then the value requested can be released
+This is an Ethereum dApp that can be used to raise funds, with payments then released based on contributors voting for each spending request.
 
-## Duration and Deadlines
-This Smart Contract sets a deadline for the Fund Raising Campaign, after which the money raised can be spent, or if the goal has not been reached then the contributors can retrieve their contributions. The current settings of Ethereum (mainnet and most testnets) is to create a new block roughly every 15 seconds. Therefore, the duration for this Smart Contract is set in "blocks".
+This has an HTML front-end built using the [Bootstrap](https://getbootstrap.com/) toolkit, and uses JavaScript and the [web3.js](https://github.com/ethereum/web3.js) API to process transactions via an Ethererum Wallet (such as [MetaMask](https://metamask.io/)) onto the Ethereum Blockchain using the "FundRaiser" smart contract, all of which is supported using data from [Etherscan](https://etherscan.io/).
 
-## Contract Deployment
-The Smart Contract can be compiled and deployed through [remix](https://remix.ethereum.org/) or using [truffle](https://www.trufflesuite.com/truffle).
-Constructor values required at deployment are:
-- _duration - In "blocks" of 15 seconds, e.g. 1 hour = 240; 1 day = 5760; 1 week = 40320
-- _goal - Financial goal in wei, e.g. 1ETH = 1000000000000000000
-- _minimumContribution - Minimum amount required for each contribution, in wei
+The web server is hosted using the [express](https://www.npmjs.com/package/express) Node.js module.
 
-In addition, the Ethereum address used to deploy the Smart Contract is set as the "owner" and certain functions can only be performed by the owner.
+> Created by Malarena SA - www.malarena.com
 
-## Contract Usage
+## Basic dApp functionality
+The dApp has the following pages:
+- Home - Provides an overview of the application and how the process works for Fund Raisers and Contributors
+- New Contract - Provides the ability to deploy a new FundRaiser Smart Contract onto the Ethereum Blockchain by supplying the contract duration, initial payment duration, goal and minimum contribution level for the fundraising campaign
+- Existing Contract - Provides the ability to view the current status and interact with an existing contract already deployed, including making contributions
+- Spending Requests - Provides the ability for the contract owner to raise spending requests, for contributors to vote on them, and once approved for the funds to be released
 
-### Contributions
-Contributors use the ```contribute``` function of the contract and submit their transaction with an Ether amount of at least the minimum contribution amount.
+## FundRaiser Smart Contract functionality
+For a complete overview of the FundRaiser Smart Contract functionality please see the FundRaiser [README.md](contracts/README.md) file.
 
-### Spending Requests
-Once the deadline has passed, and so long as the goal has been reached, the contract owner can create a spending request using the ```createRequest``` function together with the following data:
-- _description - A description of what the money will be spent on
-- _value - The amount being spent with this spending request
-- _recipient - The Ethereum address of where the money will be sent
+The Smart Contract is deployed using the "New Contract" option in the dApp. However, it can also be compiled and deployed stand-alone using [Remix](https://remix.ethereum.org/) or  [Truffle](https://www.trufflesuite.com/truffle).
 
-Each spending request is stored sequentially starting from record 0.
+## Installation and set-up
+To install a stand-alone version of the dApp and Smart Contract you will need to have [npm](https://www.npmjs.com/) and [Node.js](https://nodejs.org/en/) installed, and then:
+1) Open a terminal windows/command prompt, navigate to the directory required and then `git clone` the ethfundraiser project
+2) Change to the newly created directory and run `npm install` to load the required npm modules
+3) Edit the `./frontend/js/ethfundraiser_defaults_ToDo.js` file and update the dApp default values, such as your donation address, Etherscan API Key and WebHosting URL. Save this file in the same directory as `ethfundraiser_defaults.js`
+4) To start-up the webserver run `npm run server`. The webserver should then be running on http://localhost:3000/. Adjust the port settings in `server.js` as required
 
-### Voting
-Each contributor can then use the ```voteForRequest``` function (followed by the record number) to vote for a specific request.
+## FundRaiser Smart Contract Tests, Coverage and MythX Reports
+A full suite of Truffle tests have been developed for the FundRaiser Smart Contract under the \tests sub-directory. To run these you will need to have [Truffle](https://www.trufflesuite.com/docs/truffle/overview) and [Ganache](https://www.trufflesuite.com/docs/ganache/overview) installed:
+1) Edit the `\contracts\FundRaiser.sol` smart contract and un-comment the Test Functions section at the end of the contract (these are only used for testing purposes)
+2) Open a terminal window/command prompt, change to the project directory and start a  local test node using `ganache-cli`, or statup Ganache for Windows
+3) From another terminal window/command prompt, change to the project directory and enter `npm run test`.  This will compile the contract and then run the test suite using the Ganache blockchain
+4) The Smart Contract has also been tested using [Solidity-Coverage](https://www.npmjs.com/package/solidity-coverage) to confirm all functions are fully tested. To run the tests, ensure Solidity-Coverage is installed and configured and then from the terminal window/command prompt run `npm run coverage` which will produce the coverage reports in the \coverage directory
+5) The Smart Contract has also been verified through [MythX](https://mythx.io/). To run the verification process, ensure MythX is installed and configured and then from the terminal window/command prompt set your MYTHX_API_KEY and then run `npm run verify` to run the verification process. MythX is also available as a plug-in to Remix if preferred
 
-### Releasing Payment
-If over 50% of the contributors vote for the Spending Request the owner can then use the ```releasePayment``` function (followed by the record number) to send the agreed value to the requested recipient address.
+## Project Structure
+```powershell
+ethfundraiser
+  ├── build                   # Created by Truffle to hold the compiled smart contracts
+  ├── contracts               # Contains the smart contract source files
+  ├── coverage                # Created by solidity-coverage to hold the coverage reports
+  ├── frontend                # Contains the front-end HTML, JavaScript and Image files
+  ├── migrations              # Used by Truffle to handle smart contract deployments
+  ├── node_modules            # Created by NPM to hold all the Node Modules and dependencies
+  ├── test                    # Contains the test scripts
+  ├ server.js                 # The Node.js WebServer Hosting application
+  ├ ...                       # Various other configuration files used by the tools
+```
 
-### Refunds
-If the amount raised does not reach the goal defined, AND the contract duration has passed, the contributors can use the ```getRefund``` function to retrieve their full contribution.
-
-### Change Ownership
-It is possible for only the owner to change the owner using the ```changeOwner``` function (followed by the new owners Ethereum address).
-
-### Other viewing functions
-The following view-only functions are also available on the contract:
-- amountRaised - Shows the total amount raised to date for the contract
-- contributions (follwed by address) - Shows the contribtion amount from the specific address
-- deadline - Shows the deadline of the contract as a block number
-- goal - Shows the goal of the contract in wei
-- hasVoted (followed by spendingRequest record number and address) - Shows if the specific address has voted for the specific Spending Request
-- minimumContribuion - Shows the minimum amount required for each contribution in wei
-- owner - Shows the Ethereum address of the Smart Contract owner
-- requests (followed by spendingRequest record number) - Shows the details held of the spending request record, including description, value, recipient, completed flag and number of voters
-- totalContributors - Shows the total number of contributors
-
-## Credits
-The concept and some of the initial coding for this Smart Contract was based on an article written by Ankit Brahmbhatt: [Learning Solidity with a Simple Fundraising Smart Contract](https://medium.com/quick-code/learning-solidity-with-a-simple-fundraising-smart-contract-2fad8b1d8b73)
+## Future Updates/Ideas
+- Review MetaMask breaking changes and update app as required in Q1/2020
+- Potential updates once Solidity 0.6.x is stable
+- Potential updates from latest version of web3.js
+- See if dApp can be used with MyCrypto Desktop and MyEtherWallet/MyCrypto web wallets
+- Potential to improve method for iterating over a struct to remove votes during a refund rather than putting a hard-coded max limit on Spending Requests

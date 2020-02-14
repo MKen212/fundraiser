@@ -74,6 +74,7 @@ scDebugLog
 coverage.json
 .changelog
 .DS_Store
+.solcover.js
 
 # local working files
 _localFiles

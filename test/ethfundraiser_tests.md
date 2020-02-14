@@ -84,8 +84,7 @@ Last check date: 27/01/2020 @ 16:30
 - 06.04 - Select 2nd request and attempt to Pay Request (which is now above contract balance) gives error - Passed
 - 06.05 - Create new spending request for remaining balance, vote and Pay Request works OK (including hyperlinks & server log) and Spending Request Screen & Existing Contract/Amount Paid Out updated correctly - Passed
 - 06.07 - Create short (10) contract, make 3 contributions up to goal amount, and raise SR for total. Vote from first account and attempt to Pay Request gives error - Passed
-- 06.08 - Vote from second account and Pay Request works OK
-- 06.09 - Display 
+- 06.08 - Vote from second account and Pay Request works OK - Passed
 
 ## 07 - Other tests
 - 07.01 - FRTests-07 - SafeMath Tests implicitly checked as part of above so no additional test scenarios created
@@ -97,8 +96,6 @@ Test for "Clear" Functions and any others not tested
 
 Add error details to above
 Include additional clear functions when errors occur
-
-
 
 
 
