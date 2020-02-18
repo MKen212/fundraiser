@@ -1,10 +1,6 @@
 # ethfundraiser
 
-This is an Ethereum dApp that can be used to raise funds, with payments then released based on contributors voting for each spending request.
-
-This has an HTML front-end built using the [Bootstrap](https://getbootstrap.com/) toolkit, and uses JavaScript and the [web3.js](https://github.com/ethereum/web3.js) API to process transactions via an Ethererum Wallet (such as [MetaMask](https://metamask.io/)) onto the Ethereum Blockchain using the "FundRaiser" smart contract, all of which is supported using data from [Etherscan](https://etherscan.io/).
-
-The web server is hosted using the [express](https://www.npmjs.com/package/express) Node.js module.
+_An Ethereum dApp that can be used to raise funds, with payments then released based on contributors voting for each spending request._
 
 > Created by Malarena SA - www.malarena.com
 
@@ -19,6 +15,12 @@ The dApp has the following pages:
 For a complete overview of the FundRaiser Smart Contract functionality please see the FundRaiser [README.md](contracts/README.md) file.
 
 The Smart Contract is deployed using the "New Contract" option in the dApp. However, it can also be compiled and deployed stand-alone using [Remix](https://remix.ethereum.org/) or  [Truffle](https://www.trufflesuite.com/truffle).
+
+## Tooling Overview
+This dApp has an HTML front-end built using the [Bootstrap](https://getbootstrap.com/) toolkit, and uses JavaScript and the [web3.js](https://github.com/ethereum/web3.js) API to process transactions via an Ethererum Wallet (such as [MetaMask](https://metamask.io/)) onto the Ethereum Blockchain using the "FundRaiser" smart contract, all of which is supported using data from [Etherscan](https://etherscan.io/).
+
+The web server is hosted using the [express](https://www.npmjs.com/package/express) Node.js module.
+
 
 ## Installation and set-up
 To install a stand-alone version of the dApp and Smart Contract you will need to have [npm](https://www.npmjs.com/) and [Node.js](https://nodejs.org/en/) installed, and then:
@@ -53,5 +55,5 @@ ethfundraiser
 - Review MetaMask breaking changes and update app as required in Q1/2020
 - Potential updates once Solidity 0.6.x is stable
 - Potential updates from latest version of web3.js
-- See if dApp can be used with MyCrypto Desktop and MyEtherWallet/MyCrypto web wallets
+- See if dApp can be used with other wallets such as MyCrypto Desktop and MyEtherWallet/MyCrypto web wallets
 - Potential to improve method for iterating over a struct to remove votes during a refund rather than putting a hard-coded max limit on Spending Requests

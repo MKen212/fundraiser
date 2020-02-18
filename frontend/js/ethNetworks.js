@@ -19,7 +19,7 @@ const ETH_NETWORKS = [
     "description": "Ropsten Test Network",
     "etherscanURL": "https://ropsten.etherscan.io/",
     "etherscanAPIURL": "https://api-ropsten.etherscan.io/",
-    "statsURL": "https://teth.bitaps.com/",
+    "statsURL": "https://ropsten-stats.parity.io/",
   },
   {
     "ID": 4,

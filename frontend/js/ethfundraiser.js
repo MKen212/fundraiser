@@ -1,6 +1,6 @@
 "use strict";
 /* global Web3 DEFAULTS ETH_NETWORKS FUNDRAISER_ABI FUNDRAISER_BYTE_CODE $ */
-//* eslint-disable no-unused-vars */
+/* eslint-disable no-unused-vars */
 
 /**
  * Ether Fund Raiser
@@ -94,43 +94,9 @@ async function getNetwork() {
   let networkID = window.ethereum.networkVersion;
   network = ETH_NETWORKS.find(item => item.ID == networkID);
   if (network == undefined) network = ETH_NETWORKS.find(item => item.ID == 0);
-  // Get current average block time for selected network
-  await web3.eth.getBlockNumber()
-    .then(function (currentBlockNumber){
-      document.getElementById("top-curBlock").innerHTML = currentBlockNumber;
-      let fetchURL = network.etherscanAPIURL + "api?module=block&action=getblockcountdown&blockno=" + (+currentBlockNumber + 100) + "&apikey=" + DEFAULTS.etherscanAPIKey;
-      fetch(fetchURL)
-        .then(response => response.json())
-        .then(function (jsonBlockTime){
-          let ethscanCurrentBlock = parseInt(jsonBlockTime.result["CurrentBlock"]);
-          console.log(`Current Block: Network=${currentBlockNumber} / Etherscan=${ethscanCurrentBlock}`);
-          if ((+currentBlockNumber + 20) < +ethscanCurrentBlock || (+currentBlockNumber - 20) > +ethscanCurrentBlock) {  // Warning if Etherscan/MetaMask current block numbers are not within 20 blocks
-            message = `Warning: Network & Etherscan Current Block Numbers are not similar. Please check. Network Average Block time set to 15 seconds.`;
-            showMessage("alert alert-warning", message, 2, 0);
-            networkAvgBlockTime = 15;  // Set to Ethereum Standard
-          } else {
-            networkAvgBlockTime = parseInt(jsonBlockTime.result["EstimateTimeInSec"]) / 100;
-            console.log(`Network Average Block time: ${networkAvgBlockTime} seconds.`);
-          }
-          // Set max attribute for inputDuration & inputIPDuration fields on new contract page
-          let IDToUpdate1 = document.getElementById("inputDuration");
-          let newAttribute1 = document.createAttribute("max");
-          newAttribute1.value = Math.floor(+DEFAULTS.maxDurationSeconds / +networkAvgBlockTime).toString();
-          IDToUpdate1.setAttributeNode(newAttribute1);
-          let IDToUpdate2 = document.getElementById("inputIPDuration");
-          let newAttribute2 = document.createAttribute("max");
-          newAttribute2.value = Math.floor(+DEFAULTS.maxIPDurationSeconds / +networkAvgBlockTime).toString();
-          IDToUpdate2.setAttributeNode(newAttribute2);
-        })
-        .catch(function (error) {
-          genericError(error);
-        });
-    })
-    .catch(function (error) {
-      genericError(error);
-    });
   document.getElementById("top-network").innerHTML = (`<a href="${network.statsURL}  "class="text-info" target="_blank" title="View Network Stats">${networkID}</a> - <a href="${network.etherscanURL}" class="text-info" target="etherscan" title="View on Etherscan">${network.description}</a>`);
   console.log(`Ethereum Network selected: ${networkID}-${network.description}`);
+  getAvgBlockTime();  // Get current average block time for selected network
 }
 
 /**
@@ -172,9 +138,10 @@ function setDonationAddress() {
 }
 
 /**
- * Function to update Spending Request Page with requestCountMax for Contract
+ * Function to update Home Page & Spending Request Page with requestCountMax for Contract
  */
 function setRequestCountMax() {
+  document.getElementById("maxRequests").innerHTML = +DEFAULTS.requestCountMax;
   let IDToUpdate = document.getElementById("requestId");
   let newAttribute1 = document.createAttribute("max");
   newAttribute1.value = (+DEFAULTS.requestCountMax - 1);
@@ -182,6 +149,7 @@ function setRequestCountMax() {
   let newAttribute2 = document.createAttribute("placeholder");
   newAttribute2.value = "Request ID, starting from 0 to maximum ID of " + (+DEFAULTS.requestCountMax - 1);
   IDToUpdate.setAttributeNode(newAttribute2);
+
 }
 
 /**
@@ -690,6 +658,8 @@ async function changeOwner() {
     message = `Error: Account "${newAddress}" is ALREADY the Contract Owner.`;
     showMessage("alert alert-danger", message, 2, 0);
   } else {
+    message = `Warning: This changes which account can process certain Owner Actions...but processing anyway.`;
+    showMessage("alert alert-warning", message, 0, 0);
     await contractInstance.methods.changeOwner(newAddress).send( {
       from: defaultAccount
     }).once("transactionHash", function(hash) {
@@ -1107,9 +1077,9 @@ function blockConvertInit() {
   document.getElementById("blockTime").value = networkAvgBlockTime;
   document.getElementById("blocksNumber").value = "1";
   document.getElementById("blocksDHM").value = "0D : 0H : 0M";
-  let blocksExampleD = Math.round(86400 / networkAvgBlockTime);
-  let blocksExampleH = Math.round(3600 / networkAvgBlockTime);
-  let blocksExampleM = Math.round(60 / networkAvgBlockTime);
+  let blocksExampleD = Math.ceil(86400 / networkAvgBlockTime);
+  let blocksExampleH = Math.ceil(3600 / networkAvgBlockTime);
+  let blocksExampleM = Math.ceil(60 / networkAvgBlockTime);
   document.getElementById("blocksExampleDHM").value = `1D=${blocksExampleD} Blocks : 1H=${blocksExampleH} Blocks : 1M=${blocksExampleM} Blocks`;
 }
 
@@ -1118,12 +1088,33 @@ function blockConvertInit() {
  */
 function blockConvertNow() {
   let blockTimeSeconds = document.getElementById("blockTime").value;
+  networkAvgBlockTime = blockTimeSeconds;  // Set networkAvgBlockTime to current entry
   let blocksToConvert = document.getElementById("blocksNumber").value;
   document.getElementById("blocksDHM").value = blockDHM(blocksToConvert, blockTimeSeconds);
-  let blocksExampleD = Math.round(86400 / blockTimeSeconds);
-  let blocksExampleH = Math.round(3600 / blockTimeSeconds);
-  let blocksExampleM = Math.round(60 / blockTimeSeconds);
+  let blocksExampleD = Math.ceil(86400 / blockTimeSeconds);
+  let blocksExampleH = Math.ceil(3600 / blockTimeSeconds);
+  let blocksExampleM = Math.ceil(60 / blockTimeSeconds);
   document.getElementById("blocksExampleDHM").value = `1D=${blocksExampleD} Blocks : 1H=${blocksExampleH} Blocks : 1M=${blocksExampleM} Blocks`;
+}
+
+/**
+ * Function to Reset Block Converter Modal to latest Etherscan data
+ */
+function blockConvertReset() {
+  getAvgBlockTime()
+    .then(function() {
+      return blockConvertInit();
+    });
+}
+
+/**
+ * Function to Update Contract Screen once Block Converter Modal closed
+ */
+function blockConvertUpdate() {
+  console.log(`Network Average Block time: ${networkAvgBlockTime} seconds.`);
+  if (contractInstance.options.address != null) {
+    readContract(contractInstance.options.address);  // Refresh Contract Information Screen
+  }
 }
 
 /**
@@ -1221,6 +1212,50 @@ function genericError(error) {
   showMessage("alert alert-danger", message, 2, 1);
 }
 
+
+/**
+ * Function to get current NetworkAverageBlockTime from Etherscan
+ */
+async function getAvgBlockTime() {
+  await web3.eth.getBlockNumber()
+    .then(async function (currentBlockNumber){
+      document.getElementById("top-curBlock").innerHTML = currentBlockNumber;
+      let fetchURL = network.etherscanAPIURL + "api?module=block&action=getblockcountdown&blockno=" + (+currentBlockNumber + 100) + "&apikey=" + DEFAULTS.etherscanAPIKey;
+      await fetch(fetchURL)
+        .then(response => response.json())
+        .then(function (jsonBlockTime){
+          let ethscanCurrentBlock = parseInt(jsonBlockTime.result["CurrentBlock"]);
+          console.log(`Current Block: Network=${currentBlockNumber} / Etherscan=${ethscanCurrentBlock}`);
+          if (isNaN(ethscanCurrentBlock)) {  // Block passed on Etherscan-e.g.Ganache
+            networkAvgBlockTime = 15;  // Set to Ethereum Standard
+            console.log(`Network Average Block time: ${networkAvgBlockTime} seconds.`);
+          } else if ((+currentBlockNumber + 20) < +ethscanCurrentBlock || (+currentBlockNumber - 20) > +ethscanCurrentBlock) {  // Warning if Etherscan/MetaMask current block numbers are not within 20 blocks
+            message = `Warning: Network & Etherscan Current Block Numbers are not similar. Please check. Network Average Block time set to 15 seconds.`;
+            showMessage("alert alert-warning", message, 2, 0);
+            networkAvgBlockTime = 15;  // Set to Ethereum Standard
+          } else {
+            networkAvgBlockTime = parseInt(jsonBlockTime.result["EstimateTimeInSec"]) / 100;
+            console.log(`Network Average Block time: ${networkAvgBlockTime} seconds.`);
+          }
+          // Set max attribute for inputDuration & inputIPDuration fields on new contract page
+          let IDToUpdate1 = document.getElementById("inputDuration");
+          let newAttribute1 = document.createAttribute("max");
+          newAttribute1.value = Math.floor(+DEFAULTS.maxDurationSeconds / +networkAvgBlockTime).toString();
+          IDToUpdate1.setAttributeNode(newAttribute1);
+          let IDToUpdate2 = document.getElementById("inputIPDuration");
+          let newAttribute2 = document.createAttribute("max");
+          newAttribute2.value = Math.floor(+DEFAULTS.maxIPDurationSeconds / +networkAvgBlockTime).toString();
+          IDToUpdate2.setAttributeNode(newAttribute2);
+        })
+        .catch(function (error) {
+          genericError(error);
+        });
+    })
+    .catch(function (error) {
+      genericError(error);
+    });
+}
+
 /**
  * Function to get current ETH Prices
  */
@@ -1243,10 +1278,10 @@ async function getETHPrices() {
  */
 function blockDHM(blocks, blockDuration) {
   let seconds = (+blocks * +blockDuration);
-  let days = (+seconds >= 86400) ? Math.round(+seconds / 86400) : 0;
-  seconds -= Math.round(+days * 86400);
-  let hours = (+seconds >= 3600) ? Math.round(+seconds / 3600) : 0;
-  seconds -= Math.round(+hours * 3600);
-  let mins = (+seconds >= 60) ? Math.round(+seconds / 60) : 0;
+  let days = (+seconds >= 86400) ? Math.floor(+seconds / 86400) : 0;
+  seconds -= Math.floor(+days * 86400);
+  let hours = (+seconds >= 3600) ? Math.floor(+seconds / 3600) : 0;
+  seconds -= Math.floor(+hours * 3600);
+  let mins = (+seconds >= 60) ? Math.floor(+seconds / 60) : 0;
   return (`${days}D : ${hours}H : ${mins}M`);
 }
