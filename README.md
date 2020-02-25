@@ -8,8 +8,12 @@ _An Ethereum dApp that can be used to raise funds, with payments then released b
 The dApp has the following pages:
 - Home - Provides an overview of the application and how the process works for Fund Raisers and Contributors
 - New Contract - Provides the ability to deploy a new FundRaiser Smart Contract onto the Ethereum Blockchain by supplying the contract duration, initial payment duration, goal and minimum contribution level for the fundraising campaign
-- Existing Contract - Provides the ability to view the current status and interact with an existing contract already deployed, including making contributions
+- Existing Contract - Provides the ability to view the current status and interact with an existing contract already deployed, including making contributions, getting a refund (if allowed) and changing the contract owner
 - Spending Requests - Provides the ability for the contract owner to raise spending requests, for contributors to vote on them, and once approved for the funds to be released
+
+In addition there are two pop-up tools:
+- Block Converter - This provides a conversion between number of blocks and duration (in Days/Hours/Minutes) based on the current network block time, which can be set manually or uses the current Network Average Block Time from Etherscan
+- Wei Converter - A simple converter between Wei, Ether and USD based on the current rates published in Etherscan
 
 ## FundRaiser Smart Contract functionality
 For a complete overview of the FundRaiser Smart Contract functionality please see the FundRaiser [README.md](contracts/README.md) file.
@@ -52,8 +56,6 @@ ethfundraiser
 ```
 
 ## Future Updates/Ideas
-- Review MetaMask breaking changes and update app as required in Q1/2020
-- Potential updates once Solidity 0.6.x is stable
-- Potential updates from latest version of web3.js
+- Review MetaMask breaking changes (due Q1/2020) and update app as required
 - See if dApp can be used with other wallets such as MyCrypto Desktop and MyEtherWallet/MyCrypto web wallets
 - Potential to improve method for iterating over a struct to remove votes during a refund rather than putting a hard-coded max limit on Spending Requests

@@ -14,4 +14,14 @@ const DEFAULTS = {
   maxIPDurationSeconds: (604800 * 13),  // Maximum Initial Payment period after deadline - set to 13 weeks
   requestCountMax: 100,  // Maximum Count of Spending Requests - see FundRaiser.sol
   webHostingURL: "<Your_Website_Address>",  // Web Hosting URL used in email links
+  timestampLocale: "en-gb",  // Used to determine timestamp locale to be used
+  timestampOptions: {  // Format options for displaying timestamp
+    day: "numeric",
+    month: "short",
+    year: "numeric",
+    hour: "2-digit",
+    minute: "2-digit",
+    second: "2-digit",
+    timeZoneName: "short",
+  },
 };

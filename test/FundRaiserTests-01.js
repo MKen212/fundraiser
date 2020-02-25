@@ -18,7 +18,7 @@ contract("01 - Contract Set-up and Admin functions", async(accounts) => {
     assert.equal(deadline, currentBlockNumber + 100);
   });
 
-  it("initial Payment Deadline set", async() => {
+  it("Initial Payment Deadline set", async() => {
     let instance = await FundRaiser.new("100", "50", "10000000000000000000", "1000000000000000000");
     let currentBlockNumber = await web3.eth.getBlockNumber();
 
@@ -33,7 +33,7 @@ contract("01 - Contract Set-up and Admin functions", async(accounts) => {
     assert.equal(goal, 10000000000000000000);
   });
 
-  it("Minimun contribution set", async() => {
+  it("Minimum contribution set", async() => {
     let instance = await FundRaiser.new("100", "10", "10000000000000000000", "1000000000000000000");
 
     let minimumContribution = await instance.minimumContribution();
@@ -54,12 +54,12 @@ contract("01 - Contract Set-up and Admin functions", async(accounts) => {
     assert.equal(requestCountMax, 100);
   });
 
-  it("Contract does not allow ether fallback", async() => {
+  it("Contract does not allow fallback", async() => {
     let instance = await FundRaiser.new("100", "10", "10000000000000000000", "1000000000000000000");
 
     try {
       await instance.sendTransaction("123");
-      assert.fail("Contract does not allow Ether Fallback. Transaction should fail!");
+      assert.fail("Contract does not allow Fallback. Transaction should fail!");
     } catch (err) {
       assert(err.toString().includes("revert"), "Message: " + err);
     }

@@ -14,6 +14,7 @@ const BN = web3.utils.BN;
 
 // Set-up initial variables
 let network; // Object for Ethereum Network selected
+let networkID;  // ID for Ethereum Network selected
 let networkAvgBlockTime;  // Ethereum Network Average Block Time
 let defaultAccount;  // Ethereum Account of user
 let contractInstance;  // Object containing current contract code
@@ -40,11 +41,12 @@ let linkMessage;  // Message text with hyperlink to display
 
 // Check Ethereum Browser API is loaded and available
 if (typeof window.ethereum == "undefined") {
+  networkID = 0;
   alert("This dApp will not work without an Ethereum Browser Wallet. Please install/activate MetaMask to use this dApp!");
   console.log("MetaMask not loaded/activated.");
   $(document).ready(function(){
     message = `Error - Browser Wallet Not Connected.`;
-    showMessage("alert alert-danger", message, 2, 0);
+    showMessage("alert alert-danger", message, 2, 1);
     document.getElementById("top-network").innerHTML = `Error - Not Connected`;
   });
 
@@ -72,7 +74,7 @@ if (typeof window.ethereum == "undefined") {
 
   // Handle Browser API Account Change
   window.ethereum.on("accountsChanged", function(accounts) {
-    let networkID = window.ethereum.networkVersion;
+    networkID = window.ethereum.networkVersion;
     network = ETH_NETWORKS.find(item => item.ID == networkID);
     if (network == undefined) network = ETH_NETWORKS.find(item => item.ID == 0);
     getAccount(accounts);
@@ -91,7 +93,7 @@ if (typeof window.ethereum == "undefined") {
  * Function to get selected network details
  */
 async function getNetwork() {
-  let networkID = window.ethereum.networkVersion;
+  networkID = window.ethereum.networkVersion;
   network = ETH_NETWORKS.find(item => item.ID == networkID);
   if (network == undefined) network = ETH_NETWORKS.find(item => item.ID == 0);
   document.getElementById("top-network").innerHTML = (`<a href="${network.statsURL}  "class="text-info" target="_blank" title="View Network Stats">${networkID}</a> - <a href="${network.etherscanURL}" class="text-info" target="etherscan" title="View on Etherscan">${network.description}</a>`);
@@ -149,7 +151,7 @@ function setRequestCountMax() {
   let newAttribute2 = document.createAttribute("placeholder");
   newAttribute2.value = "Request ID, starting from 0 to maximum ID of " + (+DEFAULTS.requestCountMax - 1);
   IDToUpdate.setAttributeNode(newAttribute2);
-
+  console.log(`Request Count Max set to: ${DEFAULTS.requestCountMax}`);
 }
 
 /**
@@ -220,14 +222,18 @@ async function deployContract() {
 async function connectContract() {
   let contractAddress = document.getElementById("contractAccount").value.trim();
   document.getElementById("contractAccount").value = contractAddress;
-  // Check Contract address is valid
-  if (web3.utils.isAddress(contractAddress)) {
-    await getContract(contractAddress);
-  } else {
+  if (web3.utils.isAddress(contractAddress) == false) { 
     message = `Error: Smart Contract address "${contractAddress}" is not a valid Ethereum Address.`;
     showMessage("alert alert-danger", message, 2, 0);
     clearContract();  // Refresh Existing Contract Screen on Entry Error
     clearSpendRequest();  // Refresh Spending Request Screen on Entry Error
+  } else if (web3.utils.toBN(contractAddress).isZero()) {
+    message = `Error: Contract address cannot be Zero.`;
+    showMessage("alert alert-danger", message, 2, 0);
+    clearContract();  // Refresh Existing Contract Screen on Entry Error
+    clearSpendRequest();  // Refresh Spending Request Screen on Entry Error
+  } else {
+    await getContract(contractAddress);
   }
 }
 
@@ -263,6 +269,9 @@ async function getContract(contractAddress) {
  * @param {string} contractAddress Ethereum Smart Contract Address
  */
 async function readContract(contractAddress) {
+  // Update contractTimestamp with current Date/Time
+  document.getElementById("contractTimestamp").innerHTML = "(Last updated: " + new Date().toLocaleString(DEFAULTS.timestampLocale, DEFAULTS.timestampOptions) + ")";
+
   // Get Current ETH:USD Exchange Rate
   await getETHPrices();
 
@@ -451,8 +460,8 @@ async function readContract(contractAddress) {
     if (error) console.error(error);
     if (result) {
       totRequests = result;
-      let requestsLeft = (+DEFAULTS.requestCountMax - +totRequests);
-      if (+DEFAULTS.requestCountMax == +totRequests) {
+      let requestsLeft = (+DEFAULTS.requestCountMax > +totRequests) ? (+DEFAULTS.requestCountMax - +totRequests) : 0;
+      if (+DEFAULTS.requestCountMax <= +totRequests) {
         document.getElementById("contractSpendReqBg").className = "table-danger";
         document.getElementById("contractSpendReqStatus").innerHTML = "Max Reached";
       } else if (requestsLeft <= 10) {
@@ -528,6 +537,7 @@ function clearContract() {
   contractInstance.options.address = null;
   document.getElementById("contractAccount").value = "";
   document.getElementById("top-contract").innerHTML = "";
+  document.getElementById("contractTimestamp").innerHTML = "";
   contractOwner = null;
   document.getElementById("contractOwnedStatusBg").className = "";
   document.getElementById("contractOwnedStatus").innerHTML = "";
@@ -582,7 +592,6 @@ function clearContract() {
   document.getElementById("contractPaidOutWei").innerHTML = "";
   document.getElementById("contractPaidOutETH").innerHTML = "";
   document.getElementById("contractPaidOutUSD").innerHTML = "";
-  accountBalWei = null;
   document.getElementById("accountBalanceStatusBg").className = "";
   document.getElementById("accountBalanceStatus").innerHTML = "";
   document.getElementById("accountBalanceWei").innerHTML = "";
@@ -606,7 +615,7 @@ function emailContractLink() {
   } else {
     let emailSubject = `My Ether Fund Raiser Campaign`;
     let emailBody1 = `Please contribute to my Ether Fund Raiser Campaign.`;
-    let emailBody2 = `Go to: ${DEFAULTS.webHostingURL}, connect to the "${network.description}", select [Existing Contract] and then enter "${contractInstance.options.address}" and click on [Get Details] to see the contract and options to contribute.`;
+    let emailBody2 = `Go to: ${DEFAULTS.webHostingURL}, connect your browser's Ethereum Wallet to the "${network.description}", select [Existing Contract] and then enter "${contractInstance.options.address}" and click on [Get Details] to see the contract and options to contribute.`;
     let email = "mailto:?subject=" + emailSubject + "&body=" + emailBody1 + "%0D%0A%0D%0A" + emailBody2;
     window.open(email, "emailWindow");
   }
@@ -624,6 +633,9 @@ async function checkContribution() {
     message = `Error: Contributor Account "${checkAddress}" is invalid.`;
     showMessage("alert alert-danger", message, 2, 0);
     document.getElementById("contributorAccount").value = "";
+  } else if (web3.utils.toBN(checkAddress).isZero()) {
+    message = `Error: Contributor Account cannot be Zero.`;
+    showMessage("alert alert-danger", message, 2, 0);
   } else {
     await contractInstance.methods.contributions(checkAddress).call(function (error, result) {
       if (error) {
@@ -651,12 +663,16 @@ async function changeOwner() {
     message = `Error: New Owner Account "${newAddress}" is invalid.`;
     showMessage("alert alert-danger", message, 2, 0);
     document.getElementById("newOwnerAccount").value = "";
+  } else if (web3.utils.toBN(newAddress).isZero()) {
+    message = `Error: New Owner Account cannot be Zero.`;
+    showMessage("alert alert-danger", message, 2, 0);
   } else if (contractOwner != defaultAccount) {
     message = `Error: This action can only be processed by the Contract Owner.`;
     showMessage("alert alert-danger", message, 2, 0);
   } else if (contractOwner == newAddress){
     message = `Error: Account "${newAddress}" is ALREADY the Contract Owner.`;
     showMessage("alert alert-danger", message, 2, 0);
+    document.getElementById("newOwnerAccount").value = "";
   } else {
     message = `Warning: This changes which account can process certain Owner Actions...but processing anyway.`;
     showMessage("alert alert-warning", message, 0, 0);
@@ -796,6 +812,7 @@ async function getSpendRequest() {
         // message = `Spending Request ${chosenRequestId} is connected.`; // Not needed..?
         // showMessage("alert alert-success", message, 1, 0);  // Not needed..?
         console.log("Spending Request:", result);
+        document.getElementById("requestTimestamp").innerHTML = "(Last updated: " + new Date().toLocaleString(DEFAULTS.timestampLocale, DEFAULTS.timestampOptions) + ")";
         document.getElementById("requestDescription").innerHTML = result.description;
         requestValWei = web3.utils.toBN(result.value);
         document.getElementById("requestValueWei").innerHTML = result.value;
@@ -850,6 +867,7 @@ async function getSpendRequest() {
  */
 function clearSpendRequest() {
   chosenRequestId = null;
+  document.getElementById("requestTimestamp").innerHTML = "";
   document.getElementById("requestId").value = "";
   document.getElementById("requestDescription").innerHTML = "";
   requestValWei = null;
@@ -901,20 +919,23 @@ async function createSpendRequest() {
   } else if (+totRequests == +DEFAULTS.requestCountMax) {
     message = `Error: Maximum Number of Spending Requests (${DEFAULTS.requestCountMax}) reached.`;
     showMessage("alert alert-danger", message, 2, 1);
-  } else if (createReqDescription == "") {
-    message = `Error: Description required.`;
-    showMessage("alert alert-danger", message, 2, 0);
   } else if (goalPassed == false) {
     message = `Error: Goal not yet reached.`;
     showMessage("alert alert-danger", message, 2, 1);
+  } else if (createReqDescription == "") {
+    message = `Error: Description required.`;
+    showMessage("alert alert-danger", message, 2, 0);
   } else if (createReqValueWei == "" || createReqValueWei.lten(0)) {
     message = `Error: Request value must be greater than zero.`;
     showMessage("alert alert-danger", message, 2, 0);
   } else if (createReqValueWei.gt(balWei)) {
-    message = `Error: Request Value is greater than Contract Balance of ${balWei} wei.`;
-    showMessage("alert alert-danger", message, 2, 0);
+    message = `Error: Request Value of ${createReqValueWei} is greater than Contract Balance of ${balWei} wei.`;
+    showMessage("alert alert-danger", message, 2, 1);
   } else if (web3.utils.isAddress(createReqRecipient) == false) {
     message = `Error: Recipient Account is invalid.`;
+    showMessage("alert alert-danger", message, 2, 0);
+  } else if (web3.utils.toBN(createReqRecipient).isZero()) {
+    message = `Error: Recipient Account cannot be Zero.`;
     showMessage("alert alert-danger", message, 2, 0);
   } else if (contractOwner != defaultAccount) {
     message = `Error: This action can only be processed by the Contract Owner.`;
@@ -1009,6 +1030,9 @@ async function checkVoted() {
     message = `Error: Contributor Account "${voteAddress}" is invalid.`;
     showMessage("alert alert-danger", message, 2, 0);
     document.getElementById("voterAccount").value = "";
+  } else if (web3.utils.toBN(voteAddress).isZero()) {
+    message = `Error: Contributor Account cannot be Zero.`;
+    showMessage("alert alert-danger", message, 2, 0);
   } else {
     await contractInstance.methods.hasVoted(chosenRequestId, voteAddress).call(function (error, result) {
       if (error) {
@@ -1040,14 +1064,14 @@ async function voteSpendRequest() {
   } else if (+chosenRequestId >= +totRequests) {
     message = `Error: Spending Request does not exist.`;
     showMessage("alert alert-danger", message, 2, 0);
-  } else if (requestCompleted == true) {
-    message = `Error: Request is already completed.`;
-    showMessage("alert alert-danger", message, 2, 0);
   } else if (accountContWei.isZero()) {
     message = `Error: Your contribution is 0 wei so you cannot vote.`;
     showMessage("alert alert-danger", message, 2, 1);
   } else if (requestUserVoted == true) {
     message = `Error: You have already voted for this request.`;
+    showMessage("alert alert-danger", message, 2, 0);
+  } else if (requestCompleted == true) {
+    message = `Error: Request is already completed.`;
     showMessage("alert alert-danger", message, 2, 0);
   } else {
     await contractInstance.methods.voteForRequest(chosenRequestId).send( {
@@ -1077,9 +1101,9 @@ function blockConvertInit() {
   document.getElementById("blockTime").value = networkAvgBlockTime;
   document.getElementById("blocksNumber").value = "1";
   document.getElementById("blocksDHM").value = "0D : 0H : 0M";
-  let blocksExampleD = Math.ceil(86400 / networkAvgBlockTime);
-  let blocksExampleH = Math.ceil(3600 / networkAvgBlockTime);
-  let blocksExampleM = Math.ceil(60 / networkAvgBlockTime);
+  let blocksExampleD = Math.ceil(86400 / +networkAvgBlockTime);
+  let blocksExampleH = Math.ceil(3600 / +networkAvgBlockTime);
+  let blocksExampleM = Math.ceil(60 / +networkAvgBlockTime);
   document.getElementById("blocksExampleDHM").value = `1D=${blocksExampleD} Blocks : 1H=${blocksExampleH} Blocks : 1M=${blocksExampleM} Blocks`;
 }
 
@@ -1088,30 +1112,34 @@ function blockConvertInit() {
  */
 function blockConvertNow() {
   let blockTimeSeconds = document.getElementById("blockTime").value;
-  networkAvgBlockTime = blockTimeSeconds;  // Set networkAvgBlockTime to current entry
-  let blocksToConvert = document.getElementById("blocksNumber").value;
+  let blocksToFix = document.getElementById("blocksNumber").value + ".";
+  let blocksToConvert = blocksToFix.substr(0, blocksToFix.indexOf(".")); 
+  document.getElementById("blocksNumber").value = blocksToConvert;
   document.getElementById("blocksDHM").value = blockDHM(blocksToConvert, blockTimeSeconds);
-  let blocksExampleD = Math.ceil(86400 / blockTimeSeconds);
-  let blocksExampleH = Math.ceil(3600 / blockTimeSeconds);
-  let blocksExampleM = Math.ceil(60 / blockTimeSeconds);
+  let blocksExampleD = Math.ceil(86400 / +blockTimeSeconds);
+  let blocksExampleH = Math.ceil(3600 / +blockTimeSeconds);
+  let blocksExampleM = Math.ceil(60 / +blockTimeSeconds);
   document.getElementById("blocksExampleDHM").value = `1D=${blocksExampleD} Blocks : 1H=${blocksExampleH} Blocks : 1M=${blocksExampleM} Blocks`;
 }
 
 /**
- * Function to Reset Block Converter Modal to latest Etherscan data
+ * Function to reset networkAvgBlockTime in use
+ * @param {number} type Type of reset required. 0=To Entered; 1=To Etherscan
  */
-function blockConvertReset() {
-  getAvgBlockTime()
-    .then(function() {
-      return blockConvertInit();
-    });
-}
-
-/**
- * Function to Update Contract Screen once Block Converter Modal closed
- */
-function blockConvertUpdate() {
+function blockConvertReset(type) {
+  if (type == 0) {  // Reset to Manually Entered time
+    let blockTimeSeconds = document.getElementById("blockTime").value;
+    networkAvgBlockTime = blockTimeSeconds;
+    blockConvertInit();
+  }
+  if (type == 1) {  // Reset to Etherscan time
+    getAvgBlockTime()
+      .then(function() {
+        return blockConvertInit();
+      });
+  }
   console.log(`Network Average Block time: ${networkAvgBlockTime} seconds.`);
+  setBlockTimeAttributes();  // Reset Block Time Attributes
   if (contractInstance.options.address != null) {
     readContract(contractInstance.options.address);  // Refresh Contract Information Screen
   }
@@ -1123,7 +1151,8 @@ function blockConvertUpdate() {
 function weiConvertInit() {
   document.getElementById("convertWei").value = "1000000000000000000";
   document.getElementById("convertEth").value = "1";
-  document.getElementById("convertUSD").value = rateUSD;      
+  document.getElementById("convertUSD").value = Number(rateUSD).toFixed(2);
+  document.getElementById("convertRate").value = Number(rateUSD).toFixed(2);
 }
 
 /**
@@ -1131,18 +1160,30 @@ function weiConvertInit() {
  * @param {object} element HTML InputEvent Object
  */
 function weiConvertNow(element) {
-  let toConvert = document.getElementById(element.id).value;
   if (element.id == "convertWei") {
+    removeDecimals(element);
+    let toConvert = document.getElementById(element.id).value;
     let ethValue = web3.utils.fromWei(toConvert, "ether");
     document.getElementById("convertEth").value = ethValue;
     document.getElementById("convertUSD").value = (+ethValue * +rateUSD);
   } else if (element.id == "convertEth") {
+    checkDecimals(element);
+    let toConvert = document.getElementById(element.id).value;
+    if (toConvert == "") toConvert = "0";
     document.getElementById("convertWei").value = web3.utils.toWei(toConvert, "ether");
     document.getElementById("convertUSD").value = (+toConvert * +rateUSD);
   } else if (element.id == "convertUSD") {
-    let ethValue = (+toConvert / +rateUSD);
+    let toConvert = document.getElementById(element.id).value;
+    if (+toConvert > 1000000000000000000000) {  // Max it can handle before errors
+      toConvert = 1000000000000000000000;
+      document.getElementById("convertUSD").value = toConvert;
+    }
+    let ethValue = (+toConvert / +rateUSD).toString();
+    if (ethValue.includes(".")) {  // Ensure max of 18 decimals for web3 utils
+      ethValue = (ethValue.substr(0, (ethValue.indexOf(".")))) + (ethValue.substr((ethValue.indexOf(".")), 19));
+    }
     document.getElementById("convertEth").value = ethValue;
-    document.getElementById("convertWei").value = web3.utils.toWei(ethValue.toString(), "ether");
+    document.getElementById("convertWei").value = web3.utils.toWei(ethValue, "ether");
   }
 }
 
@@ -1191,9 +1232,8 @@ function showMessage(msgClass, message, msgConsole, msgServer, linkMessage) {
   
   // Display Server Message if required
   if (msgServer == 1) {
-    let networkID = window.ethereum.networkVersion;
     let serverLog = new XMLHttpRequest();
-    let serverMessage = new Date() + ": " + networkID + ":" + defaultAccount + "> " + message;
+    let serverMessage = new Date().toLocaleString(DEFAULTS.timestampLocale, DEFAULTS.timestampOptions) + ": " + networkID + ":" + defaultAccount + "> " + message;
     serverLog.open(
       "PUT",
       "/logs/" + serverMessage,
@@ -1237,15 +1277,7 @@ async function getAvgBlockTime() {
             networkAvgBlockTime = parseInt(jsonBlockTime.result["EstimateTimeInSec"]) / 100;
             console.log(`Network Average Block time: ${networkAvgBlockTime} seconds.`);
           }
-          // Set max attribute for inputDuration & inputIPDuration fields on new contract page
-          let IDToUpdate1 = document.getElementById("inputDuration");
-          let newAttribute1 = document.createAttribute("max");
-          newAttribute1.value = Math.floor(+DEFAULTS.maxDurationSeconds / +networkAvgBlockTime).toString();
-          IDToUpdate1.setAttributeNode(newAttribute1);
-          let IDToUpdate2 = document.getElementById("inputIPDuration");
-          let newAttribute2 = document.createAttribute("max");
-          newAttribute2.value = Math.floor(+DEFAULTS.maxIPDurationSeconds / +networkAvgBlockTime).toString();
-          IDToUpdate2.setAttributeNode(newAttribute2);
+          setBlockTimeAttributes();
         })
         .catch(function (error) {
           genericError(error);
@@ -1254,6 +1286,20 @@ async function getAvgBlockTime() {
     .catch(function (error) {
       genericError(error);
     });
+}
+
+/**
+ * Function to set attributes for inputDuration & inputIPDuration fields on new contract page 
+ */
+function setBlockTimeAttributes() {
+  let IDToUpdate1 = document.getElementById("inputDuration");
+  let newAttribute1 = document.createAttribute("max");
+  newAttribute1.value = Math.floor(+DEFAULTS.maxDurationSeconds / +networkAvgBlockTime).toString();
+  IDToUpdate1.setAttributeNode(newAttribute1);
+  let IDToUpdate2 = document.getElementById("inputIPDuration");
+  let newAttribute2 = document.createAttribute("max");
+  newAttribute2.value = Math.floor(+DEFAULTS.maxIPDurationSeconds / +networkAvgBlockTime).toString();
+  IDToUpdate2.setAttributeNode(newAttribute2);  
 }
 
 /**
@@ -1284,4 +1330,29 @@ function blockDHM(blocks, blockDuration) {
   seconds -= Math.floor(+hours * 3600);
   let mins = (+seconds >= 60) ? Math.floor(+seconds / 60) : 0;
   return (`${days}D : ${hours}H : ${mins}M`);
+}
+
+/**
+ * Function to remove decimal places from element values
+ * @param {object} element  HTML Element Object
+ */
+function removeDecimals(element) {
+  let toConvert = document.getElementById(element.id).value + ".";
+  let converted = toConvert.substr(0, toConvert.indexOf(".")); 
+  document.getElementById(element.id).value = converted;
+}
+
+/**
+ * Function to fix decimal places of element values to maximum of 18 places after decimal 
+ * @param {object} element  HTML Element Object
+ */
+function checkDecimals(element) {
+  let toConvert =  document.getElementById(element.id).value;
+  if (toConvert.includes(".")) {
+    let decimalPlace = toConvert.indexOf(".");
+    let convertLeft = toConvert.substr(0, decimalPlace);
+    let convertRight = toConvert.substr(decimalPlace, 19);
+    let converted = convertLeft + convertRight;
+    document.getElementById(element.id).value = converted;
+  }
 }
