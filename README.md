@@ -4,7 +4,7 @@ _An Ethereum dApp that can be used to raise funds, with payments then released b
 
 > Created by Malarena SA - www.malarena.com
 
-# PLEASE NOTE - This development repository is now archived. The current live version of this repository can be found [here](https://github.com/MalarenaSA/fundraiser).
+# PLEASE NOTE - This development repository is now archived. The current live version of this repository can be found [here](https://github.com/MalarenaSA/fundraiser) and [here](https://github.com/MalarenaSA/ethfundraiser).
 
 ## Basic dApp functionality
 The dApp has the following pages:
